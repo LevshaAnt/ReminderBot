@@ -15,7 +15,16 @@ public enum Command {
 	MINUTES("минут(у)",105),
 	HOURS("час(а/ов)",106),
 	DAYS("день(дней)",107),
-	FINISH("Завершить", 108);
+	FINISH("Завершить", 108),
+	HIDE_BUTTON("убрать кнопки",999),
+
+	START_GENERAL_MENU("События - планируй события \nАктиваторы - тот кто напомнит"),
+	EVENT_TYPE("Управляй событиями"),
+	WAIT_EVENT_DESCRIPTION("Введите описание события"),
+	WAIT_EVENT_DATE("Когда напомнить \nВведите данные в формате: \n дд.мм.гг чч.мм\n31.12.31 15.00"),
+	WAIT_EVENT_COUNT("Число повторений события \n положительное число"),
+	WAIT_EVET_PERIOD("Положительное число"),
+	ERROR_INPUT("Ошибка ввода");
 
 	private final String text;
     private final int id;
@@ -23,6 +32,11 @@ public enum Command {
     private Command(final String text,final int id) {
         this.text = text;
         this.id = id;
+    }
+    
+    private Command(final String text) {
+    	this.text = text;
+    	this.id = -999;
     }
 
     public String getText() {

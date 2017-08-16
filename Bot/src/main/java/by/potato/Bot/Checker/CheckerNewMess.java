@@ -7,7 +7,6 @@ import org.telegram.telegrambots.api.objects.Message;
 import by.potato.Bot.Entities.Event;
 import by.potato.Bot.Entities.Client;
 import by.potato.Bot.Entities.Command;
-import by.potato.Bot.Entities.DataType;
 import by.potato.Bot.Holders.UserHolder;
 import by.potato.Bot.Entities.CommandButton;
 
@@ -28,7 +27,6 @@ public class CheckerNewMess implements Runnable {
 	private UserHolder userHolder;
 	private List<SendMessage> lMess;
 	private Event event;
-	
 	
 	public CheckerNewMess(Message mess) {
 		this.mess = mess;
@@ -84,7 +82,18 @@ public class CheckerNewMess implements Runnable {
 		return sm;
 	}
 
-//	private boolean
+	private void CheckerInput(Command dataType) {
+		
+		switch (dataType) {
+		case WAIT_EVENT_DESCRIPTION:
+				this.userHolder.setError(false);
+			break;
+
+		default:
+			break;
+		}
+	}
+
 	@Override
 	public void run() {
 	
@@ -98,20 +107,28 @@ public class CheckerNewMess implements Runnable {
 			
 			case START:
 			case CANCEL:
-					mess.setText(DataType.START_GENERAL_MENU.getText());
-					mess.setReplyMarkup(CommandButton.getKeyboard(Command.START.getId()));
-					repeat = false;
+				mess.setText(Command.START_GENERAL_MENU.getText());
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.START.getId()));
+				repeat = false;
 				break;
 			case EVENT:
-					mess.setText(DataType.EVENT_TYPE.getText());
-					mess.setReplyMarkup(CommandButton.getKeyboard(Command.EVENT.getId()));
-					repeat = false;
+				mess.setText(Command.EVENT_TYPE.getText());					
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.EVENT.getId()));
+				repeat = false;
 				break;
 			case EVENT_NEW:
-					mess.setText(DataType.WAIT_EVENT_DESCRIPTION.getText());
-					this.userHolder.setDataType(DataType.WAIT_EVENT_DESCRIPTION);
-					this.userHolder.setNeedTextInp(true);
-					repeat = false;
+				mess.setText(Command.WAIT_EVENT_DESCRIPTION.getText());
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.HIDE_BUTTON.getId()));
+				this.userHolder.setDataType(Command.WAIT_EVENT_DESCRIPTION);
+				this.userHolder.setNeedTextInp(true);
+				repeat = false;
+				break;
+				
+			case WAIT_EVENT_DATE:
+				mess.setText(Command.WAIT_EVENT_DATE.getText());
+				this.userHolder.setDataType(Command.WAIT_EVENT_DATE);
+				this.userHolder.setNeedTextInp(true);
+				repeat = false;
 				break;
 				
 			default:
@@ -119,7 +136,14 @@ public class CheckerNewMess implements Runnable {
 				if(this.userHolder.isNeedTextInp()) {
 					switch (this.userHolder.getDataType()) {
 					case WAIT_EVENT_DESCRIPTION:
-							
+							CheckerInput(Command.WAIT_EVENT_DESCRIPTION);
+							if(!this.userHolder.isError()) {//not problem in Input
+								repeat = true;
+								this.event.setTextEvent(this.text);
+								this.text =Command.WAIT_EVENT_DATE.getText();
+							} else {
+								mess.setText(Command.ERROR_INPUT.getText() + this.userHolder.getErrorMess());
+							}
 						break;
 
 					default:
@@ -130,14 +154,11 @@ public class CheckerNewMess implements Runnable {
 				}
 				break;
 			}
+			
+			this.lMess.add(mess);
 		}
 		
-		this.lMess.add(mess);
-		
-		for(SendMessage element: this.lMess) { 
-			qMess.add(element);//FIFO
-		}
-		
+		qMess.addAll(this.lMess);
 		
 		updateConcurrentStructures();
 	}

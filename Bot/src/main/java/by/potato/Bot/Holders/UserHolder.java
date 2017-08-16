@@ -3,13 +3,13 @@ package by.potato.Bot.Holders;
 import java.time.Instant;
 
 import by.potato.Bot.Entities.Client;
-import by.potato.Bot.Entities.DataType;
+import by.potato.Bot.Entities.Command;
 
 public class UserHolder {
 
 	private Client client;
 	private Long lastAppeal;
-	private DataType dataType;
+	private Command dataType;
 	private boolean needTextInp;
 	private boolean error;
 	private String errorMess;
@@ -38,11 +38,11 @@ public class UserHolder {
 		this.client = client;
 	}
 
-	public DataType getDataType() {
+	public Command getDataType() {
 		return dataType;
 	}
 
-	public void setDataType(DataType dataType) {
+	public void setDataType(Command dataType) {
 		this.dataType = dataType;
 	}
 
