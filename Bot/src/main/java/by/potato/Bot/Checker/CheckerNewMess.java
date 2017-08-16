@@ -105,6 +105,7 @@ public class CheckerNewMess implements Runnable {
 		while(repeat) {
 			switch (Command.parse(text)) {	
 			
+			
 			case START:
 			case CANCEL:
 				mess.setText(Command.START_GENERAL_MENU.getText());

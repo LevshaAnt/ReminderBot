@@ -3,6 +3,8 @@ package by.potato.Bot;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -27,6 +29,7 @@ public class MainBot extends TelegramLongPollingBot{
 	public static Map<Long,UserHolder> mUserHolder = new ConcurrentHashMap<>();
 	public static Queue<SendMessage> qMess = new ConcurrentLinkedQueue<SendMessage>();
 	public static Map<Long,SendMessage> mMessDuringCreation = new ConcurrentHashMap<>();
+	public static ScheduledExecutorService ex = Executors.newScheduledThreadPool(1);
 			
 	private ExecutorService esNewMess = Executors.newCachedThreadPool();
 	
@@ -46,24 +49,16 @@ public class MainBot extends TelegramLongPollingBot{
 	}
 
 	private void sender() {
-		new Thread() {
-			@SuppressWarnings("deprecation")
-			@Override
-			public void run() {
-				while (true) {
-					try {
-						if(!qMess.isEmpty()) {
-							sendMessage(qMess.poll());
-						}
-						Thread.sleep(33);
-					} catch (TelegramApiException e) {
-						e.printStackTrace();
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
+		
+		ex.scheduleAtFixedRate(()->{
+			if(!qMess.isEmpty()) {
+				try {
+					sendMessage(qMess.poll());
+				} catch (TelegramApiException e) {
+					e.printStackTrace();
 				}
 			}
-		}.start();
+		}, 0, 33, TimeUnit.MILLISECONDS);
 	}
 
 	@Override
