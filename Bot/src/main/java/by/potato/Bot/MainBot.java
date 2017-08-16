@@ -16,18 +16,19 @@ import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 import by.potato.Bot.DB.DBHelper;
+import by.potato.Bot.Entities.Event;
 import by.potato.Bot.Holders.UserHolder;
 import by.potato.Bot.Checker.CheckerNewMess;
 
 public class MainBot extends TelegramLongPollingBot{
 	
 	public static DBHelper dbhelper = new DBHelper();
-	private ExecutorService esNewMess = Executors.newCachedThreadPool();
+	public static Map<Long,Event> mMessCreate = new ConcurrentHashMap<>();
 	public static Map<Long,UserHolder> mUserHolder = new ConcurrentHashMap<>();
 	public static Queue<SendMessage> qMess = new ConcurrentLinkedQueue<SendMessage>();
-	public static Queue<SendMessage> qMessCreate = new ConcurrentLinkedQueue<SendMessage>();
 	public static Map<Long,SendMessage> mMessDuringCreation = new ConcurrentHashMap<>();
 			
+	private ExecutorService esNewMess = Executors.newCachedThreadPool();
 	
 	public static void main(String[] args) {
 		

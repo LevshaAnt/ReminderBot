@@ -4,6 +4,7 @@ import org.telegram.telegrambots.api.objects.User;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
 
+import by.potato.Bot.Entities.Event;
 import by.potato.Bot.Entities.Client;
 import by.potato.Bot.Entities.Command;
 import by.potato.Bot.Entities.DataType;
@@ -11,8 +12,8 @@ import by.potato.Bot.Holders.UserHolder;
 import by.potato.Bot.Entities.CommandButton;
 
 import static by.potato.Bot.MainBot.qMess;
-import static by.potato.Bot.MainBot.qMessCreate;
 import static by.potato.Bot.MainBot.dbhelper;
+import static by.potato.Bot.MainBot.mMessCreate;
 import static by.potato.Bot.MainBot.mUserHolder;
 
 import java.util.List;
@@ -26,6 +27,7 @@ public class CheckerNewMess implements Runnable {
 	private Long chartID;
 	private UserHolder userHolder;
 	private List<SendMessage> lMess;
+	private Event event;
 	
 	
 	public CheckerNewMess(Message mess) {
@@ -60,7 +62,10 @@ public class CheckerNewMess implements Runnable {
 		}
 	}
 	
-//	private void getEvent() {
+	private void getEvent() {
+		
+	}
+	
 	
 	private SendMessage getNewMess() {
 		SendMessage sm = new SendMessage();
