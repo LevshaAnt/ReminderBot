@@ -35,7 +35,9 @@ public class CheckerNewMess implements Runnable {
 		this.chartID = mess.getChatId();
 		this.text = mess.getText();
 		this.lMess = new ArrayList<SendMessage>();	
+		
 		getUser();
+		getEvent();
 	}
 	
 	private void getUser() {
@@ -63,9 +65,17 @@ public class CheckerNewMess implements Runnable {
 	}
 	
 	private void getEvent() {
-		
+		if(mMessCreate.containsKey(this.chartID)) {
+			this.event = mMessCreate.get(this.chartID);
+		} else {
+			this.event = new Event(this.chartID);
+		}
 	}
 	
+	private void updateConcurrentStructures() {
+		mUserHolder.replace(this.chartID, this.userHolder);
+		mMessCreate.replace(this.chartID, this.event);
+	}
 	
 	private SendMessage getNewMess() {
 		SendMessage sm = new SendMessage();
@@ -128,7 +138,8 @@ public class CheckerNewMess implements Runnable {
 			qMess.add(element);//FIFO
 		}
 		
-		mUserHolder.replace(this.chartID, this.userHolder);
+		
+		updateConcurrentStructures();
 	}
 
 }

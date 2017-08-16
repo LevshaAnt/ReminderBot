@@ -16,7 +16,7 @@ public class Event {
 	private long count ;
 	private long offset;
 	private long nextTime;
-	private int idCreateUser;
+	private Long idCreateUser;
 	private Set<Integer> idUsers;
 	
 	public Event() {
@@ -24,6 +24,11 @@ public class Event {
 		this.idUsers = new HashSet<Integer>();
 		this.uuid = UUID.randomUUID().toString();
 
+	}
+	
+	public Event(Long idCreateUser) {
+		this();
+		this.idCreateUser = idCreateUser;
 	}
 	
 	public String getTextEvent() {
@@ -66,11 +71,11 @@ public class Event {
 		this.nextTime = nextTime;
 	}
 
-	public int getIdCreateUser() {
+	public Long getIdCreateUser() {
 		return idCreateUser;
 	}
 
-	public void setIdCreateUser(int idCreateUser) {
+	public void setIdCreateUser(Long idCreateUser) {
 		this.idCreateUser = idCreateUser;
 	}
 
@@ -112,9 +117,8 @@ public class Event {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + idCreateUser;
-		result = prime * result + (int) (offset ^ (offset >>> 32));
-		result = prime * result + ((textEvent == null) ? 0 : textEvent.hashCode());
+		result = prime * result + (int) (count ^ (count >>> 32));
+		result = prime * result + ((idCreateUser == null) ? 0 : idCreateUser.hashCode());
 		result = prime * result + ((uuid == null) ? 0 : uuid.hashCode());
 		return result;
 	}
@@ -128,14 +132,12 @@ public class Event {
 		if (getClass() != obj.getClass())
 			return false;
 		Event other = (Event) obj;
-		if (idCreateUser != other.idCreateUser)
+		if (count != other.count)
 			return false;
-		if (offset != other.offset)
-			return false;
-		if (textEvent == null) {
-			if (other.textEvent != null)
+		if (idCreateUser == null) {
+			if (other.idCreateUser != null)
 				return false;
-		} else if (!textEvent.equals(other.textEvent))
+		} else if (!idCreateUser.equals(other.idCreateUser))
 			return false;
 		if (uuid == null) {
 			if (other.uuid != null)
@@ -143,7 +145,7 @@ public class Event {
 		} else if (!uuid.equals(other.uuid))
 			return false;
 		return true;
-	}	
+	}
 	
 	
 }
