@@ -23,7 +23,8 @@ public class CommandButton {
 		replyKeyboardMarkup.setOneTimeKeyboard(true);	
 		
 		List<KeyboardRow> keyboardList = new ArrayList<KeyboardRow>();
-		KeyboardRow keyboardColum = new KeyboardRow();
+		KeyboardRow keyboardColumFirst = new KeyboardRow();
+		KeyboardRow keyboardColumSecond= new KeyboardRow();
 		
 		switch (comm) {
 		
@@ -47,15 +48,21 @@ public class CommandButton {
 			keyboardList.add( getKeyboardRow(Command.EVENT_AFTER.getText()));
 		break;
 			
-		case EVENT_SELECT_TYPE_PERIOD:
-			keyboardColum.addAll( getKeyboardRow(Command.MINUTE.getText()));
-			keyboardColum.addAll( getKeyboardRow(Command.HOUR.getText()));
-			keyboardColum.addAll( getKeyboardRow(Command.DAY.getText()));
-			keyboardList.add(keyboardColum);
+		case EVENT_SELECT_PERIOD:
+			keyboardColumFirst.addAll( getKeyboardRow(Command.MINUTE.getText()));
+			keyboardColumFirst.addAll( getKeyboardRow(Command.HOUR.getText()));
+			keyboardColumFirst.addAll( getKeyboardRow(Command.DAY.getText()));
+			keyboardColumSecond.addAll( getKeyboardRow(Command.WEEK.getText()));
+			keyboardColumSecond.addAll( getKeyboardRow(Command.MONTH.getText()));
+			keyboardColumSecond.addAll( getKeyboardRow(Command.YEAR.getText()));
+
+			keyboardList.add(keyboardColumFirst);
+			keyboardList.add(keyboardColumSecond);
 		break;
 	
 		case FINISH:
 			keyboardList.add( getKeyboardRow(Command.FINISH.getText()));
+			keyboardList.add( getKeyboardRow("Добавить активаторы"));
 			keyboardList.add( getKeyboardRow(Command.MENU_GENERAL_RETURN.getText()));
 		break;
 		

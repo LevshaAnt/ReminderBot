@@ -23,11 +23,12 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 
 public class CheckerNewMess implements Runnable {
 
-	private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyy HH.mm");
+	private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yy HH.mm");
 			
 	private String text;
 	private Message mess;
@@ -103,7 +104,10 @@ public class CheckerNewMess implements Runnable {
 		case EVENT_DATE:	
 			try {
 				this.event.setBeginTime(LocalDateTime.parse(this.text, formatter));
+				this.userHolder.setError(false);
 			} catch (DateTimeParseException e) {
+				System.err.println(e.getMessage());
+				System.err.println(e.getCause());
 				this.userHolder.setErrorMess(Command.ERROR_EVENT_DATE.getText());
 				this.userHolder.setError(true);
 			}
@@ -122,6 +126,21 @@ public class CheckerNewMess implements Runnable {
 				this.userHolder.setErrorMess(Command.ERROR_EVENT_COUNT.getText());
 				this.userHolder.setError(true);
 			}
+			break;
+		case EVENT_COUNT_ALARM:
+			try {
+				long count = Long.parseLong(text);
+				if(count > 1) {
+					 this.event.setCountAlarm(count);
+					 this.userHolder.setError(false);
+				} else {
+					throw new NumberFormatException();
+				}
+			} catch (NumberFormatException e) {
+				this.userHolder.setErrorMess(Command.ERROR_EVENT_COUNT.getText());
+				this.userHolder.setError(true);
+			}
+			break;
 			
 	/*	
 		case EVENT_PERIOD:	
@@ -189,7 +208,7 @@ public class CheckerNewMess implements Runnable {
 				
 			case EVENT_TYPE:
 				mess.setText(Command.EVENT_TYPE.getText());
-				mess.setReplyMarkup(CommandButton.getKeyboard(Command.EVENT));
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.EVENT_TYPE));
 				this.userHolder.setNeedTextInp(false);
 				break;
 				
@@ -209,11 +228,60 @@ public class CheckerNewMess implements Runnable {
 				this.userHolder.setNeedTextInp(true);
 				break;
 				
-				
-			case EVENT_COUNT:
-				break;
 			case EVENT_COUNT_ALARM:
+				mess.setText(Command.EVENT_COUNT_ALARM.getText());
+				this.userHolder.setDataType(Command.EVENT_COUNT_ALARM);
+				this.userHolder.setNeedTextInp(true);
 				break;
+				
+			case EVENT_SELECT_PERIOD:
+				mess.setText(Command.EVENT_SELECT_PERIOD.getText());
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.EVENT_SELECT_PERIOD));
+				this.userHolder.setNeedTextInp(false);
+				break;
+				
+			case MINUTE:
+				mess.setText(Command.FINISH.getText());
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
+				this.userHolder.setNeedTextInp(false);
+				this.event.setOffsetPeriod(ChronoUnit.MINUTES);
+				break;
+			
+			case HOUR:
+				mess.setText(Command.FINISH.getText());
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
+				this.userHolder.setNeedTextInp(false);
+				this.event.setOffsetPeriod(ChronoUnit.HOURS);
+				break;
+			
+			case DAY:
+				mess.setText(Command.FINISH.getText());
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
+				this.userHolder.setNeedTextInp(false);
+				this.event.setOffsetPeriod(ChronoUnit.DAYS);
+				break;
+				
+			case WEEK:
+				mess.setText(Command.FINISH.getText());
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
+				this.userHolder.setNeedTextInp(false);
+				this.event.setOffsetPeriod(ChronoUnit.WEEKS);
+				break;
+				
+			case MONTH:
+				mess.setText(Command.FINISH.getText());
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
+				this.userHolder.setNeedTextInp(false);
+				this.event.setOffsetPeriod(ChronoUnit.MONTHS);
+				break;
+				
+			case YEAR:
+				mess.setText(Command.FINISH.getText());
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
+				this.userHolder.setNeedTextInp(false);
+				this.event.setOffsetPeriod(ChronoUnit.YEARS);
+				break;
+			
 				
 			default:
 				
@@ -222,7 +290,10 @@ public class CheckerNewMess implements Runnable {
 					CheckerInput(this.userHolder.getDataType());
 					repeat = true;
 					
-					mess.setText(Command.ERROR_INPUT.getText() + this.userHolder.getErrorMess());
+					if(this.userHolder.isError()) {
+						mess.setText(Command.ERROR_INPUT.getText() + this.userHolder.getErrorMess());
+						repeat = false;
+					}
 					
 					switch (this.userHolder.getDataType()) {
 					case EVENT_DESCRIPTION:
@@ -238,6 +309,8 @@ public class CheckerNewMess implements Runnable {
 							mess.setText(Command.COMPLITE.getText());
 							mess.setReplyToMessageId(this.messageID);
 						}
+						break;
+						
 					case EVENT_COUNT:
 						if(!this.userHolder.isError()) {//not problem in Input
 							this.event.setTextEvent(this.text);
@@ -245,6 +318,16 @@ public class CheckerNewMess implements Runnable {
 							mess.setText(Command.COMPLITE.getText());
 							mess.setReplyToMessageId(this.messageID);
 						}
+						break;
+					
+					case EVENT_COUNT_ALARM:
+						if(!this.userHolder.isError()) {//not problem in Input
+							this.event.setTextEvent(this.text);
+							this.text =Command.EVENT_SELECT_PERIOD.getText();
+							mess.setText(Command.COMPLITE.getText());
+							mess.setReplyToMessageId(this.messageID);
+						}
+						break;
 						
 					default:
 						break;	
