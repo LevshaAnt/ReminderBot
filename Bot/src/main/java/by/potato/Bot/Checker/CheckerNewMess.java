@@ -17,13 +17,22 @@ import static by.potato.Bot.MainBot.mUserHolder;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 
 public class CheckerNewMess implements Runnable {
 
+	private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyy HH.mm");
+			
 	private String text;
 	private Message mess;
 	private Long chartID;
+	private Integer messageID; 
 	private UserHolder userHolder;
 	private List<SendMessage> lMess;
 	private Event event;
@@ -31,6 +40,7 @@ public class CheckerNewMess implements Runnable {
 	public CheckerNewMess(Message mess) {
 		this.mess = mess;
 		this.chartID = mess.getChatId();
+		this.messageID= mess.getMessageId();
 		this.text = mess.getText();
 		this.lMess = new ArrayList<SendMessage>();	
 		
@@ -85,10 +95,51 @@ public class CheckerNewMess implements Runnable {
 	private void CheckerInput(Command dataType) {
 		
 		switch (dataType) {
-		case WAIT_EVENT_DESCRIPTION:
+		case EVENT_DESCRIPTION:
+				this.event.setTextEvent(this.text);
 				this.userHolder.setError(false);
 			break;
-
+	
+		case EVENT_DATE:	
+			try {
+				this.event.setBeginTime(LocalDateTime.parse(this.text, formatter));
+			} catch (DateTimeParseException e) {
+				this.userHolder.setErrorMess(Command.ERROR_EVENT_DATE.getText());
+				this.userHolder.setError(true);
+			}
+			break;
+		
+		case EVENT_COUNT:
+			try {
+				long count = Long.parseLong(text);
+				if(count > 1) {
+					 this.event.setCountEvent(count);
+					 this.userHolder.setError(false);
+				} else {
+					throw new NumberFormatException();
+				}
+			} catch (NumberFormatException e) {
+				this.userHolder.setErrorMess(Command.ERROR_EVENT_COUNT.getText());
+				this.userHolder.setError(true);
+			}
+			
+	/*	
+		case EVENT_PERIOD:	
+			try {
+				long count = Long.parseLong(text);
+				if(count > 1) {
+					this.event.setOffset(count);
+					this.userHolder.setError(false);
+				} else {
+					throw new NumberFormatException();
+				}
+				
+			} catch (NumberFormatException e) {
+				this.userHolder.setErrorMess(Command.REPEAT.getText());
+				this.userHolder.setError(true);
+			}	
+			break;	
+		*/	
 		default:
 			break;
 		}
@@ -97,68 +148,118 @@ public class CheckerNewMess implements Runnable {
 	@Override
 	public void run() {
 	
-		SendMessage mess = getNewMess();
+		
 		this.userHolder.updateLastAppeal();
 		System.out.println(this.text);
 		
 		boolean repeat = true;
 		while(repeat) {
+			
+			SendMessage mess = getNewMess();
+			
+			repeat = false;
 			switch (Command.parse(text)) {	
-			
-			
+
 			case START:
 			case CANCEL:
+			case MENU_GENERAL_RETURN:
 				mess.setText(Command.START_GENERAL_MENU.getText());
-				mess.setReplyMarkup(CommandButton.getKeyboard(Command.START.getId()));
-				repeat = false;
-				break;
-			case EVENT:
-				mess.setText(Command.EVENT_TYPE.getText());					
-				mess.setReplyMarkup(CommandButton.getKeyboard(Command.EVENT.getId()));
-				repeat = false;
-				break;
-			case EVENT_NEW:
-				mess.setText(Command.WAIT_EVENT_DESCRIPTION.getText());
-				mess.setReplyMarkup(CommandButton.getKeyboard(Command.HIDE_BUTTON.getId()));
-				this.userHolder.setDataType(Command.WAIT_EVENT_DESCRIPTION);
-				this.userHolder.setNeedTextInp(true);
-				repeat = false;
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.START));
+				this.userHolder.setNeedTextInp(false);
 				break;
 				
-			case WAIT_EVENT_DATE:
-				mess.setText(Command.WAIT_EVENT_DATE.getText());
-				this.userHolder.setDataType(Command.WAIT_EVENT_DATE);
+			case EVENT:
+				mess.setText(Command.EVENT_INFO.getText());					
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.EVENT));
+				this.userHolder.setNeedTextInp(false);
+				break;
+				
+			case EVENT_NEW:
+				mess.setText(Command.EVENT_DESCRIPTION.getText());	
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.HIDE_BUTTON));
+				this.userHolder.setDataType(Command.EVENT_DESCRIPTION);
 				this.userHolder.setNeedTextInp(true);
-				repeat = false;
+				break;
+				
+			case EVENT_DATE:
+				mess.setText(Command.EVENT_DATE.getText());
+				this.userHolder.setDataType(Command.EVENT_DATE);
+				this.userHolder.setNeedTextInp(true);
+				break;
+				
+			case EVENT_TYPE:
+				mess.setText(Command.EVENT_TYPE.getText());
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.EVENT));
+				this.userHolder.setNeedTextInp(false);
+				break;
+				
+			case EVENT_BEFORE:
+				mess.setText(Command.EVENT_COUNT.getText());
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.HIDE_BUTTON));
+				this.event.setDirectionFlag(false);
+				this.userHolder.setDataType(Command.EVENT_COUNT);
+				this.userHolder.setNeedTextInp(true);
+				break;
+				
+			case EVENT_AFTER:
+				mess.setText(Command.EVENT_COUNT.getText());
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.HIDE_BUTTON));
+				this.event.setDirectionFlag(true);
+				this.userHolder.setDataType(Command.EVENT_COUNT);
+				this.userHolder.setNeedTextInp(true);
+				break;
+				
+				
+			case EVENT_COUNT:
+				break;
+			case EVENT_COUNT_ALARM:
 				break;
 				
 			default:
 				
 				if(this.userHolder.isNeedTextInp()) {
+					
+					CheckerInput(this.userHolder.getDataType());
+					repeat = true;
+					
+					mess.setText(Command.ERROR_INPUT.getText() + this.userHolder.getErrorMess());
+					
 					switch (this.userHolder.getDataType()) {
-					case WAIT_EVENT_DESCRIPTION:
-							CheckerInput(Command.WAIT_EVENT_DESCRIPTION);
-							if(!this.userHolder.isError()) {//not problem in Input
-								repeat = true;
-								this.event.setTextEvent(this.text);
-								this.text =Command.WAIT_EVENT_DATE.getText();
-							} else {
-								mess.setText(Command.ERROR_INPUT.getText() + this.userHolder.getErrorMess());
-							}
+					case EVENT_DESCRIPTION:
+						if(!this.userHolder.isError()) {//not problem in Input
+							this.text =Command.EVENT_DATE.getText();
+							mess.setText(Command.COMPLITE.getText());
+							mess.setReplyToMessageId(this.messageID);
+						} 
 						break;
-
+					case EVENT_DATE:
+						if(!this.userHolder.isError()) {//not problem in Input
+							this.text =Command.EVENT_TYPE.getText();
+							mess.setText(Command.COMPLITE.getText());
+							mess.setReplyToMessageId(this.messageID);
+						}
+					case EVENT_COUNT:
+						if(!this.userHolder.isError()) {//not problem in Input
+							this.event.setTextEvent(this.text);
+							this.text =Command.EVENT_COUNT_ALARM.getText();
+							mess.setText(Command.COMPLITE.getText());
+							mess.setReplyToMessageId(this.messageID);
+						}
+						
 					default:
-						break;
-					}
-				} else {		
-					mess.setText("Повторите ввод");
+						break;	
+				
+					}	
+				}  else {		
+					mess.setText(Command.REPEAT.getText());
+					repeat = false;
 				}
 				break;
 			}
-			
-			this.lMess.add(mess);
-		}
-		
+				this.lMess.add(mess);
+				
+		}	
+				
 		qMess.addAll(this.lMess);
 		
 		updateConcurrentStructures();

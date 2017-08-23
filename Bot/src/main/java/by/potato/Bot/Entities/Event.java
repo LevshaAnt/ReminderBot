@@ -1,6 +1,9 @@
 package by.potato.Bot.Entities;
 
-import java.util.Date;
+import java.time.temporal.ChronoUnit;
+import java.time.Duration;
+import java.time.LocalDateTime;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -13,11 +16,14 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class Event {
 	private String textEvent;
 	private String uuid;
-	private long count ;
-	private long offset;
-	private long nextTime;
+	private Long countEvent;
+	private Long countAlarm;
+	private ChronoUnit offsetPeriod;  //for --> "hours", "minutes", "days" "weeks", "months", "years"
+	private LocalDateTime beginTime;
+	private LocalDateTime nextTime;
 	private Long idCreateUser;
 	private Set<Integer> idUsers;
+	private Boolean directionFlag; // false -- before; true -- after;
 	
 	public Event() {
 		
@@ -30,7 +36,7 @@ public class Event {
 		this();
 		this.idCreateUser = idCreateUser;
 	}
-	
+
 	public String getTextEvent() {
 		return textEvent;
 	}
@@ -47,27 +53,43 @@ public class Event {
 		this.uuid = uuid;
 	}
 
-	public long getCount() {
-		return count;
+	public Long getCountEvent() {
+		return countEvent;
 	}
 
-	public void setCount(long count) {
-		this.count = count;
+	public void setCountEvent(Long countEvent) {
+		this.countEvent = countEvent;
 	}
 
-	public long getOffset() {
-		return offset;
+	public Long getCountAlarm() {
+		return countAlarm;
 	}
 
-	public void setOffset(long offset) {
-		this.offset = offset;
+	public void setCountAlarm(Long countAlarm) {
+		this.countAlarm = countAlarm;
 	}
 
-	public long getNextTime() {
+	public ChronoUnit getOffsetPeriod() {
+		return offsetPeriod;
+	}
+
+	public void setOffsetPeriod(ChronoUnit offsetPeriod) {
+		this.offsetPeriod = offsetPeriod;
+	}
+
+	public LocalDateTime getBeginTime() {
+		return beginTime;
+	}
+
+	public void setBeginTime(LocalDateTime beginTime) {
+		this.beginTime = beginTime;
+	}
+
+	public LocalDateTime getNextTime() {
 		return nextTime;
 	}
 
-	public void setNextTime(long nextTime) {
+	public void setNextTime(LocalDateTime nextTime) {
 		this.nextTime = nextTime;
 	}
 
@@ -87,37 +109,18 @@ public class Event {
 		this.idUsers = idUsers;
 	}
 
-	public void genNextTime() {
-		if(this.count>0) {
-			--this.count;
-			this.nextTime = this.nextTime + this.offset;
-			if(count == 0) {
-				this.nextTime = 0; //event has been finished
-			}
-		}
+	public Boolean getDirectionFlag() {
+		return directionFlag;
 	}
-	
-	@JsonIgnore
-	public String getInfo() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("Напоминание!");
-		sb.append(this.textEvent).append(System.lineSeparator());
-		if(this.count > 0 ) {
-			sb.append("След. напоминание ->").append(System.lineSeparator());
-			sb.append(new Date(this.nextTime)).append(System.lineSeparator());
-			sb.append("Осталось напоминаний ->").append(this.count);
-		} else {
-			sb.append("Событие завершено!");
-		}
 
-		return sb.toString();	
+	public void setDirectionFlag(Boolean directionFlag) {
+		this.directionFlag = directionFlag;
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (int) (count ^ (count >>> 32));
 		result = prime * result + ((idCreateUser == null) ? 0 : idCreateUser.hashCode());
 		result = prime * result + ((uuid == null) ? 0 : uuid.hashCode());
 		return result;
@@ -132,8 +135,6 @@ public class Event {
 		if (getClass() != obj.getClass())
 			return false;
 		Event other = (Event) obj;
-		if (count != other.count)
-			return false;
 		if (idCreateUser == null) {
 			if (other.idCreateUser != null)
 				return false;
@@ -148,4 +149,21 @@ public class Event {
 	}
 	
 	
+	
+/*	@JsonIgnore
+/*	public String getInfo() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Напоминание!");
+		sb.append(this.textEvent).append(System.lineSeparator());
+		if(this.count > 0 ) {
+			sb.append("След. напоминание ->").append(System.lineSeparator());
+			sb.append(new Date(this.nextTime)).append(System.lineSeparator());
+			sb.append("Осталось напоминаний ->").append(this.count);
+		} else {
+			sb.append("Событие завершено!");
+		}
+
+		return sb.toString();	
+	}
+*/
 }

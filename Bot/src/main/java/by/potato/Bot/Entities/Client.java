@@ -8,6 +8,7 @@ public class Client {
 	private Long id;
 	private String name = "";
 	private String surname = "";
+	private int timezone = 0;
 	
 	public Client() {	}
 	
@@ -40,6 +41,14 @@ public class Client {
 
 	public void setSurname(String surname) {
 		this.surname = surname;
+	}
+
+	public int getTimezone() {
+		return timezone;
+	}
+
+	public void setTimezone(int timezone) {
+		this.timezone = timezone;
 	}
 
 	@Override
