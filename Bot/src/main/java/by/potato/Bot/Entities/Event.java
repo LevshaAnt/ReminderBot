@@ -18,7 +18,9 @@ public class Event {
 	private String uuid;
 	private Long countEvent;
 	private Long countAlarm;
-	private ChronoUnit offsetPeriod;  //for --> "hours", "minutes", "days" "weeks", "months", "years"
+	private Long countLeftAlarm;
+	private ChronoUnit offsetEvent = null;
+	private ChronoUnit offsetAlarm = null;  //for --> "hours", "minutes", "days" "weeks", "months", "years"
 	private LocalDateTime beginTime;
 	private LocalDateTime nextTime;
 	private Long idCreateUser;
@@ -26,16 +28,49 @@ public class Event {
 	private Boolean directionFlag; // false -- before; true -- after;
 	
 	public Event() {
-		
 		this.idUsers = new HashSet<Integer>();
 		this.uuid = UUID.randomUUID().toString();
-
+		this.countAlarm = 0L;
 	}
 	
 	public Event(Long idCreateUser) {
 		this();
 		this.idCreateUser = idCreateUser;
 	}
+	
+	
+	public ChronoUnit getOffsetEvent() {
+		return offsetEvent;
+	}
+
+	public void setOffsetEvent(ChronoUnit offsetEvent) {
+		this.offsetEvent = offsetEvent;
+	}
+
+	public ChronoUnit getOffsetAlarm() {
+		return offsetAlarm;
+	}
+
+	public void setOffsetAlarm(ChronoUnit offsetAlarm) {
+		this.offsetAlarm = offsetAlarm;
+	}
+
+	public void updateNextEventTime() {
+		if(this.countEvent > 0) { //есть ещё события запланированные
+			
+			if(this.countLeftAlarm < this.countAlarm) {	
+				this.nextTime = this.directionFlag?
+									this.beginTime.plus(this.countLeftAlarm, this.offsetAlarm):
+									this.beginTime.minus(this.countAlarm - this.countLeftAlarm, this.offsetAlarm);
+									
+				this.countLeftAlarm++;					
+			} else {
+				this.countLeftAlarm = 0L;
+				this.beginTime = this.beginTime.plus(1,this.offsetEvent);
+				this.countEvent--;
+			}
+		}
+	}	
 
 	public String getTextEvent() {
 		return textEvent;
@@ -68,14 +103,16 @@ public class Event {
 	public void setCountAlarm(Long countAlarm) {
 		this.countAlarm = countAlarm;
 	}
+	
 
-	public ChronoUnit getOffsetPeriod() {
-		return offsetPeriod;
+	public Long getCountLeftAlarm() {
+		return countLeftAlarm;
 	}
 
-	public void setOffsetPeriod(ChronoUnit offsetPeriod) {
-		this.offsetPeriod = offsetPeriod;
+	public void setCountLeftAlarm(Long countLeftAlarm) {
+		this.countLeftAlarm = countLeftAlarm;
 	}
+
 
 	public LocalDateTime getBeginTime() {
 		return beginTime;
@@ -148,22 +185,39 @@ public class Event {
 		return true;
 	}
 	
+	@JsonIgnore
+	public String getInfo() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Информация о событии").append(System.lineSeparator());
+		sb.append("Описание события -->").append(System.lineSeparator());
+		sb.append(this.textEvent).append(System.lineSeparator());
+		sb.append("Число повторений события -->").append(System.lineSeparator());
+		sb.append(this.countEvent).append(System.lineSeparator());
+		sb.append("Период события -->").append(System.lineSeparator());
+		sb.append(this.offsetEvent).append(System.lineSeparator());
+		sb.append("Число напоминаний о событии -->").append(System.lineSeparator());
+		sb.append(this.countAlarm).append(System.lineSeparator());
+		sb.append("Временной промежуток между напоминаниями -->").append(System.lineSeparator());
+		sb.append(this.offsetAlarm).append(System.lineSeparator());
+		sb.append("Следующее напоминание в -->").append(System.lineSeparator());
+		sb.append(this.nextTime).append(System.lineSeparator());
+		return sb.toString();
+	}
 	
-	
-/*	@JsonIgnore
-/*	public String getInfo() {
+	@JsonIgnore
+	public String getReminder() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Напоминание!");
 		sb.append(this.textEvent).append(System.lineSeparator());
-		if(this.count > 0 ) {
-			sb.append("След. напоминание ->").append(System.lineSeparator());
-			sb.append(new Date(this.nextTime)).append(System.lineSeparator());
-			sb.append("Осталось напоминаний ->").append(this.count);
+		
+		if(this.countEvent > 0 ) {
+			sb.append("Следующее напоминание -->").append(System.lineSeparator());
+			sb.append(this.nextTime).append(System.lineSeparator());
 		} else {
 			sb.append("Событие завершено!");
 		}
 
 		return sb.toString();	
 	}
-*/
+
 }

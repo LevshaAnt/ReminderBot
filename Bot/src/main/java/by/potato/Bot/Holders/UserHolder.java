@@ -13,16 +13,22 @@ public class UserHolder {
 	private boolean needTextInp;
 	private boolean error;
 	private String errorMess;
+	private boolean flagEvent;
 	
 
 	public UserHolder(Client client) {
 		this.client = client;
 		this.errorMess ="";
+		this.flagEvent = true;
 		updateLastAppeal();
 	}
+	
+	public boolean isFlagEvent() {
+		return flagEvent;
+	}
 
-	public Long getLastAppeal() {
-		return lastAppeal;
+	public void setFlagEvent(boolean flagEvent) {
+		this.flagEvent = flagEvent;
 	}
 
 	public void updateLastAppeal() {

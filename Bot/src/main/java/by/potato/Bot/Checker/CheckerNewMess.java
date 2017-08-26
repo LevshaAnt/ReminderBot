@@ -1,8 +1,9 @@
 package by.potato.Bot.Checker;
 
 import org.telegram.telegrambots.api.objects.User;
-import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
+import org.telegram.telegrambots.api.methods.send.SendMessage;
+
 
 import by.potato.Bot.Entities.Event;
 import by.potato.Bot.Entities.Client;
@@ -14,17 +15,17 @@ import static by.potato.Bot.MainBot.qMess;
 import static by.potato.Bot.MainBot.dbhelper;
 import static by.potato.Bot.MainBot.mMessCreate;
 import static by.potato.Bot.MainBot.mUserHolder;
+import static by.potato.Bot.MainBot.qMessFinish;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
+
+
 
 public class CheckerNewMess implements Runnable {
 
@@ -44,7 +45,6 @@ public class CheckerNewMess implements Runnable {
 		this.messageID= mess.getMessageId();
 		this.text = mess.getText();
 		this.lMess = new ArrayList<SendMessage>();	
-		
 		getUser();
 		getEvent();
 	}
@@ -78,12 +78,19 @@ public class CheckerNewMess implements Runnable {
 			this.event = mMessCreate.get(this.chartID);
 		} else {
 			this.event = new Event(this.chartID);
+			mMessCreate.put(this.chartID, this.event);//create new event to map
 		}
 	}
 	
 	private void updateConcurrentStructures() {
 		mUserHolder.replace(this.chartID, this.userHolder);
 		mMessCreate.replace(this.chartID, this.event);
+	}
+	
+	private void migrationEvent() {
+		mMessCreate.remove(this.chartID);
+		this.event.updateNextEventTime();
+		qMessFinish.add(this.event);
 	}
 	
 	private SendMessage getNewMess() {
@@ -106,33 +113,23 @@ public class CheckerNewMess implements Runnable {
 				this.event.setBeginTime(LocalDateTime.parse(this.text, formatter));
 				this.userHolder.setError(false);
 			} catch (DateTimeParseException e) {
-				System.err.println(e.getMessage());
-				System.err.println(e.getCause());
 				this.userHolder.setErrorMess(Command.ERROR_EVENT_DATE.getText());
 				this.userHolder.setError(true);
 			}
 			break;
 		
 		case EVENT_COUNT:
-			try {
-				long count = Long.parseLong(text);
-				if(count > 1) {
-					 this.event.setCountEvent(count);
-					 this.userHolder.setError(false);
-				} else {
-					throw new NumberFormatException();
-				}
-			} catch (NumberFormatException e) {
-				this.userHolder.setErrorMess(Command.ERROR_EVENT_COUNT.getText());
-				this.userHolder.setError(true);
-			}
-			break;
 		case EVENT_COUNT_ALARM:
 			try {
 				long count = Long.parseLong(text);
 				if(count > 1) {
-					 this.event.setCountAlarm(count);
-					 this.userHolder.setError(false);
+					if(this.userHolder.isFlagEvent()) {
+						this.event.setCountEvent(count);
+					} else {
+						this.event.setCountAlarm(count);
+					}
+				
+					this.userHolder.setError(false);
 				} else {
 					throw new NumberFormatException();
 				}
@@ -142,23 +139,6 @@ public class CheckerNewMess implements Runnable {
 			}
 			break;
 			
-	/*	
-		case EVENT_PERIOD:	
-			try {
-				long count = Long.parseLong(text);
-				if(count > 1) {
-					this.event.setOffset(count);
-					this.userHolder.setError(false);
-				} else {
-					throw new NumberFormatException();
-				}
-				
-			} catch (NumberFormatException e) {
-				this.userHolder.setErrorMess(Command.REPEAT.getText());
-				this.userHolder.setError(true);
-			}	
-			break;	
-		*/	
 		default:
 			break;
 		}
@@ -228,58 +208,145 @@ public class CheckerNewMess implements Runnable {
 				this.userHolder.setNeedTextInp(true);
 				break;
 				
+			case EVENT_PERIOD:	
+				mess.setText(Command.EVENT_PERIOD.getText());
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.EVENT_PERIOD));
+				this.userHolder.setNeedTextInp(false);
+				break;
+								
 			case EVENT_COUNT_ALARM:
 				mess.setText(Command.EVENT_COUNT_ALARM.getText());
 				this.userHolder.setDataType(Command.EVENT_COUNT_ALARM);
 				this.userHolder.setNeedTextInp(true);
-				break;
+				break;	
 				
-			case EVENT_SELECT_PERIOD:
-				mess.setText(Command.EVENT_SELECT_PERIOD.getText());
-				mess.setReplyMarkup(CommandButton.getKeyboard(Command.EVENT_SELECT_PERIOD));
+			case EVENT_PERIOD_ALARM:
+				mess.setText(Command.EVENT_PERIOD_ALARM.getText());
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.EVENT_PERIOD));
 				this.userHolder.setNeedTextInp(false);
 				break;
 				
-			case MINUTE:
-				mess.setText(Command.FINISH.getText());
-				mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
-				this.userHolder.setNeedTextInp(false);
-				this.event.setOffsetPeriod(ChronoUnit.MINUTES);
+			case MINUTE:				
+				if(this.userHolder.isFlagEvent()) {
+					this.event.setOffsetEvent(ChronoUnit.MINUTES);
+					this.text = Command.EVENT_COUNT_ALARM.getText();
+					this.userHolder.setFlagEvent(false);
+					
+					mess.setReplyMarkup(CommandButton.getKeyboard(Command.HIDE_BUTTON));
+					mess.setText(Command.COMPLITE.getText());
+					
+					repeat = true;
+				} else {
+					this.event.setOffsetAlarm(ChronoUnit.MINUTES);
+					mess.setText(Command.FINISH.getText());
+					mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
+					this.userHolder.setNeedTextInp(false);
+				}
+				
 				break;
 			
 			case HOUR:
-				mess.setText(Command.FINISH.getText());
-				mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
-				this.userHolder.setNeedTextInp(false);
-				this.event.setOffsetPeriod(ChronoUnit.HOURS);
+				if(this.userHolder.isFlagEvent()) {
+					this.event.setOffsetEvent(ChronoUnit.HOURS);
+					this.text = Command.EVENT_COUNT_ALARM.getText();
+					this.userHolder.setFlagEvent(false);
+					repeat = true;
+					
+					mess.setReplyMarkup(CommandButton.getKeyboard(Command.HIDE_BUTTON));
+					mess.setText(Command.COMPLITE.getText());
+					
+				} else {
+					this.event.setOffsetAlarm(ChronoUnit.HOURS);
+					mess.setText(Command.FINISH.getText());
+					mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
+					this.userHolder.setNeedTextInp(false);
+				}
+
 				break;
 			
 			case DAY:
-				mess.setText(Command.FINISH.getText());
-				mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
-				this.userHolder.setNeedTextInp(false);
-				this.event.setOffsetPeriod(ChronoUnit.DAYS);
+				if(this.userHolder.isFlagEvent()) {
+					this.event.setOffsetEvent(ChronoUnit.DAYS);
+					this.text = Command.EVENT_COUNT_ALARM.getText();
+					this.userHolder.setFlagEvent(false);
+					repeat = true;
+					
+					mess.setReplyMarkup(CommandButton.getKeyboard(Command.HIDE_BUTTON));
+					mess.setText(Command.COMPLITE.getText());
+					
+				} else {
+					this.event.setOffsetAlarm(ChronoUnit.DAYS);
+					mess.setText(Command.FINISH.getText());
+					mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
+					this.userHolder.setNeedTextInp(false);
+				}
+
 				break;
 				
 			case WEEK:
-				mess.setText(Command.FINISH.getText());
-				mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
-				this.userHolder.setNeedTextInp(false);
-				this.event.setOffsetPeriod(ChronoUnit.WEEKS);
+				if(this.userHolder.isFlagEvent()) {
+					this.event.setOffsetEvent(ChronoUnit.WEEKS);
+					this.text = Command.EVENT_COUNT_ALARM.getText();
+					this.userHolder.setFlagEvent(false);
+					repeat = true;
+
+					mess.setReplyMarkup(CommandButton.getKeyboard(Command.HIDE_BUTTON));
+					mess.setText(Command.COMPLITE.getText());
+					
+				} else {
+					this.event.setOffsetAlarm(ChronoUnit.WEEKS);
+					mess.setText(Command.FINISH.getText());
+					mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
+					this.userHolder.setNeedTextInp(false);
+				}
+				
 				break;
 				
 			case MONTH:
-				mess.setText(Command.FINISH.getText());
-				mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
-				this.userHolder.setNeedTextInp(false);
-				this.event.setOffsetPeriod(ChronoUnit.MONTHS);
+				if(this.userHolder.isFlagEvent()) {
+					this.event.setOffsetEvent(ChronoUnit.MONTHS);
+					this.text = Command.EVENT_COUNT_ALARM.getText();
+					this.userHolder.setFlagEvent(false);
+					repeat = true;
+					
+					mess.setReplyMarkup(CommandButton.getKeyboard(Command.HIDE_BUTTON));
+					mess.setText(Command.COMPLITE.getText());
+					
+				} else {
+					this.event.setOffsetAlarm(ChronoUnit.MONTHS);
+					mess.setText(Command.FINISH.getText());
+					mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
+					this.userHolder.setNeedTextInp(false);
+				}
+				
 				break;
 				
-			case YEAR:
-				mess.setText(Command.FINISH.getText());
-				mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
+			case YEAR:			
+				if(this.userHolder.isFlagEvent()) {
+					this.event.setOffsetEvent(ChronoUnit.YEARS);
+					this.text = Command.EVENT_COUNT_ALARM.getText();
+					this.userHolder.setFlagEvent(false);
+					
+					mess.setReplyMarkup(CommandButton.getKeyboard(Command.HIDE_BUTTON));
+					mess.setText(Command.COMPLITE.getText());
+					
+					repeat = true;
+				} else {
+					this.event.setOffsetAlarm(ChronoUnit.YEARS);
+					mess.setText(Command.FINISH.getText());
+					mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
+					this.userHolder.setNeedTextInp(false);
+				}
+				
+				break;
+				
+			case FINISH:
+				mess.setText(Command.EVENT_FINISH.getText());
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.START));
 				this.userHolder.setNeedTextInp(false);
-				this.event.setOffsetPeriod(ChronoUnit.YEARS);
+				migrationEvent();
+				
+				System.out.println(event.getInfo());
 				break;
 			
 				
@@ -314,7 +381,7 @@ public class CheckerNewMess implements Runnable {
 					case EVENT_COUNT:
 						if(!this.userHolder.isError()) {//not problem in Input
 							this.event.setTextEvent(this.text);
-							this.text =Command.EVENT_COUNT_ALARM.getText();
+							this.text =Command.EVENT_PERIOD.getText();
 							mess.setText(Command.COMPLITE.getText());
 							mess.setReplyToMessageId(this.messageID);
 						}
@@ -323,7 +390,7 @@ public class CheckerNewMess implements Runnable {
 					case EVENT_COUNT_ALARM:
 						if(!this.userHolder.isError()) {//not problem in Input
 							this.event.setTextEvent(this.text);
-							this.text =Command.EVENT_SELECT_PERIOD.getText();
+							this.text =Command.EVENT_PERIOD_ALARM.getText();
 							mess.setText(Command.COMPLITE.getText());
 							mess.setReplyToMessageId(this.messageID);
 						}

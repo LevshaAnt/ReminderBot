@@ -48,7 +48,7 @@ public class CommandButton {
 			keyboardList.add( getKeyboardRow(Command.EVENT_AFTER.getText()));
 		break;
 			
-		case EVENT_SELECT_PERIOD:
+		case EVENT_PERIOD:
 			keyboardColumFirst.addAll( getKeyboardRow(Command.MINUTE.getText()));
 			keyboardColumFirst.addAll( getKeyboardRow(Command.HOUR.getText()));
 			keyboardColumFirst.addAll( getKeyboardRow(Command.DAY.getText()));

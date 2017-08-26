@@ -1,6 +1,5 @@
 package by.potato.Bot;
 
-import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.Executors;
@@ -27,6 +26,7 @@ public class MainBot extends TelegramLongPollingBot{
 	
 	public static DBHelper dbhelper = new DBHelper();
 	public static Map<Long,Event> mMessCreate = new ConcurrentHashMap<>();
+	public static Queue <Event> qMessFinish = new ConcurrentLinkedQueue<Event>();
 	public static Map<Long,UserHolder> mUserHolder = new ConcurrentHashMap<>();
 	public static Queue<SendMessage> qMess = new ConcurrentLinkedQueue<SendMessage>();
 	public static Map<Long,SendMessage> mMessDuringCreation = new ConcurrentHashMap<>();
