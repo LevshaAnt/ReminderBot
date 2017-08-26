@@ -15,7 +15,7 @@ import static by.potato.Bot.MainBot.qMess;
 import static by.potato.Bot.MainBot.dbhelper;
 import static by.potato.Bot.MainBot.mMessCreate;
 import static by.potato.Bot.MainBot.mUserHolder;
-import static by.potato.Bot.MainBot.qMessFinish;
+import static by.potato.Bot.MainBot.qEvent;
 
 import java.util.List;
 import java.util.Optional;
@@ -90,7 +90,7 @@ public class CheckerNewMess implements Runnable {
 	private void migrationEvent() {
 		mMessCreate.remove(this.chartID);
 		this.event.updateNextEventTime();
-		qMessFinish.add(this.event);
+		qEvent.add(this.event);
 	}
 	
 	private SendMessage getNewMess() {

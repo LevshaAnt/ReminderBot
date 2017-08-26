@@ -1,5 +1,6 @@
 package by.potato.Bot;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.Executors;
@@ -20,17 +21,18 @@ import org.telegram.telegrambots.exceptions.TelegramApiException;
 import by.potato.Bot.DB.DBHelper;
 import by.potato.Bot.Entities.Event;
 import by.potato.Bot.Holders.UserHolder;
+import by.potato.Bot.Checker.CheckerEvent;
 import by.potato.Bot.Checker.CheckerNewMess;
 
 public class MainBot extends TelegramLongPollingBot{
 	
 	public static DBHelper dbhelper = new DBHelper();
 	public static Map<Long,Event> mMessCreate = new ConcurrentHashMap<>();
-	public static Queue <Event> qMessFinish = new ConcurrentLinkedQueue<Event>();
+	public static Queue<Event> qEvent = new ConcurrentLinkedQueue<Event>();
 	public static Map<Long,UserHolder> mUserHolder = new ConcurrentHashMap<>();
 	public static Queue<SendMessage> qMess = new ConcurrentLinkedQueue<SendMessage>();
 	public static Map<Long,SendMessage> mMessDuringCreation = new ConcurrentHashMap<>();
-	public static ScheduledExecutorService ex = Executors.newScheduledThreadPool(1);
+	public static ScheduledExecutorService ex = Executors.newScheduledThreadPool(3);
 			
 	private ExecutorService esNewMess = Executors.newCachedThreadPool();
 	
@@ -60,7 +62,11 @@ public class MainBot extends TelegramLongPollingBot{
 				}
 			}
 		}, 0, 33, TimeUnit.MILLISECONDS);
+		
+		ex.scheduleAtFixedRate(new CheckerEvent(), 0, 30, TimeUnit.SECONDS);
 	}
+	
+	
 
 	@Override
 	public String getBotUsername() {

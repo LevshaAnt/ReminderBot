@@ -1,5 +1,7 @@
 package by.potato.Bot.Entities;
 
+import java.time.ZoneOffset;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(value = { "_id" })
@@ -8,15 +10,16 @@ public class Client {
 	private Long id;
 	private String name = "";
 	private String surname = "";
-	private int timezone = 0;
+	private ZoneOffset offset;
 	
 	public Client() {	}
 	
-	public Client(Long id, String name, String surname) {
+	public Client(Long id, String name, String surname, ZoneOffset offset) {
 		super();
 		this.id = id;
 		this.name = name;
 		this.surname = surname;
+		this.offset = offset;
 	}
 
 	public Long getId() {
@@ -43,12 +46,12 @@ public class Client {
 		this.surname = surname;
 	}
 
-	public int getTimezone() {
-		return timezone;
+	public ZoneOffset getOffset() {
+		return offset;
 	}
 
-	public void setTimezone(int timezone) {
-		this.timezone = timezone;
+	public void setOffset(ZoneOffset offset) {
+		this.offset = offset;
 	}
 
 	@Override

@@ -2,6 +2,8 @@ package by.potato.Bot.DB;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -72,7 +74,7 @@ public class DBHelper {
 			}
 		}	
 		
-		return new Client(id,name,surname);
+		return new Client(id,name,surname,ZoneOffset.of("+03:00"));
 	}
 	
 	public boolean setClient(Client user) {
@@ -101,7 +103,7 @@ public class DBHelper {
 		DBCollection dbcoll = db.getCollection(this.collEvent);
 		
 		BasicDBObject whereQuery = new BasicDBObject();
-		whereQuery.put("nextTime", new BasicDBObject("$lt", needTime).append("$gt", 1));
+		whereQuery.put("nextTimeInLong", new BasicDBObject("$lt", needTime));
 		
 		DBCursor cursor = dbcoll.find(whereQuery);
 		

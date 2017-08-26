@@ -1,9 +1,8 @@
 package by.potato.Bot.Entities;
 
 import java.time.temporal.ChronoUnit;
-import java.time.Duration;
 import java.time.LocalDateTime;
-
+import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -16,29 +15,46 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class Event {
 	private String textEvent;
 	private String uuid;
-	private Long countEvent;
-	private Long countAlarm;
-	private Long countLeftAlarm;
+	private long countEvent;
+	private long countAlarm;
+	private long countLeftAlarm;
 	private ChronoUnit offsetEvent = null;
 	private ChronoUnit offsetAlarm = null;  //for --> "hours", "minutes", "days" "weeks", "months", "years"
 	private LocalDateTime beginTime;
 	private LocalDateTime nextTime;
-	private Long idCreateUser;
+	private long nextTimeInLong;
+	private long idCreateUser;
+	private ZoneOffset clinetOffset;// = ZoneOffset.of("-05:00");
 	private Set<Integer> idUsers;
 	private Boolean directionFlag; // false -- before; true -- after;
 	
 	public Event() {
 		this.idUsers = new HashSet<Integer>();
 		this.uuid = UUID.randomUUID().toString();
-		this.countAlarm = 0L;
+		this.countAlarm = 0;
 	}
 	
-	public Event(Long idCreateUser) {
+	public Event(long idCreateUser) {
 		this();
 		this.idCreateUser = idCreateUser;
 	}
 	
-	
+	public long getNextTimeInLong() {
+		return nextTimeInLong;
+	}
+
+	public void setNextTimeInLong(long nextTimeInLong) {
+		this.nextTimeInLong = nextTimeInLong;
+	}
+
+	public ZoneOffset getClinetOffset() {
+		return clinetOffset;
+	}
+
+	public void setClinetOffset(ZoneOffset clinetOffset) {
+		this.clinetOffset = clinetOffset;
+	}
+
 	public ChronoUnit getOffsetEvent() {
 		return offsetEvent;
 	}
@@ -62,10 +78,11 @@ public class Event {
 				this.nextTime = this.directionFlag?
 									this.beginTime.plus(this.countLeftAlarm, this.offsetAlarm):
 									this.beginTime.minus(this.countAlarm - this.countLeftAlarm, this.offsetAlarm);
-									
+								
+				this.nextTimeInLong = this.nextTime.toEpochSecond(clinetOffset);				
 				this.countLeftAlarm++;					
 			} else {
-				this.countLeftAlarm = 0L;
+				this.countLeftAlarm = 0;
 				this.beginTime = this.beginTime.plus(1,this.offsetEvent);
 				this.countEvent--;
 			}
@@ -88,28 +105,28 @@ public class Event {
 		this.uuid = uuid;
 	}
 
-	public Long getCountEvent() {
+	public long getCountEvent() {
 		return countEvent;
 	}
 
-	public void setCountEvent(Long countEvent) {
+	public void setCountEvent(long countEvent) {
 		this.countEvent = countEvent;
 	}
 
-	public Long getCountAlarm() {
+	public long getCountAlarm() {
 		return countAlarm;
 	}
 
-	public void setCountAlarm(Long countAlarm) {
+	public void setCountAlarm(long countAlarm) {
 		this.countAlarm = countAlarm;
 	}
 	
 
-	public Long getCountLeftAlarm() {
+	public long getCountLeftAlarm() {
 		return countLeftAlarm;
 	}
 
-	public void setCountLeftAlarm(Long countLeftAlarm) {
+	public void setCountLeftAlarm(long countLeftAlarm) {
 		this.countLeftAlarm = countLeftAlarm;
 	}
 
@@ -126,15 +143,11 @@ public class Event {
 		return nextTime;
 	}
 
-	public void setNextTime(LocalDateTime nextTime) {
-		this.nextTime = nextTime;
-	}
-
-	public Long getIdCreateUser() {
+	public long getIdCreateUser() {
 		return idCreateUser;
 	}
 
-	public void setIdCreateUser(Long idCreateUser) {
+	public void setIdCreateUser(long idCreateUser) {
 		this.idCreateUser = idCreateUser;
 	}
 
@@ -154,11 +167,13 @@ public class Event {
 		this.directionFlag = directionFlag;
 	}
 
+	
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((idCreateUser == null) ? 0 : idCreateUser.hashCode());
+		result = prime * result + ((beginTime == null) ? 0 : beginTime.hashCode());
+		result = prime * result + (int) (idCreateUser ^ (idCreateUser >>> 32));
 		result = prime * result + ((uuid == null) ? 0 : uuid.hashCode());
 		return result;
 	}
@@ -172,10 +187,12 @@ public class Event {
 		if (getClass() != obj.getClass())
 			return false;
 		Event other = (Event) obj;
-		if (idCreateUser == null) {
-			if (other.idCreateUser != null)
+		if (beginTime == null) {
+			if (other.beginTime != null)
 				return false;
-		} else if (!idCreateUser.equals(other.idCreateUser))
+		} else if (!beginTime.equals(other.beginTime))
+			return false;
+		if (idCreateUser != other.idCreateUser)
 			return false;
 		if (uuid == null) {
 			if (other.uuid != null)
@@ -184,21 +201,17 @@ public class Event {
 			return false;
 		return true;
 	}
-	
+
 	@JsonIgnore
 	public String getInfo() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Информация о событии").append(System.lineSeparator());
 		sb.append("Описание события -->").append(System.lineSeparator());
 		sb.append(this.textEvent).append(System.lineSeparator());
-		sb.append("Число повторений события -->").append(System.lineSeparator());
-		sb.append(this.countEvent).append(System.lineSeparator());
-		sb.append("Период события -->").append(System.lineSeparator());
-		sb.append(this.offsetEvent).append(System.lineSeparator());
-		sb.append("Число напоминаний о событии -->").append(System.lineSeparator());
-		sb.append(this.countAlarm).append(System.lineSeparator());
-		sb.append("Временной промежуток между напоминаниями -->").append(System.lineSeparator());
-		sb.append(this.offsetAlarm).append(System.lineSeparator());
+		sb.append("Число повторений события -->").append(this.countEvent).append(System.lineSeparator());
+		sb.append("Период события -->").append(this.offsetEvent).append(System.lineSeparator());
+		sb.append("Число напоминаний о событии -->").append(this.countAlarm).append(System.lineSeparator());
+		sb.append("Временной промежуток между напоминаниями -->").append(this.offsetAlarm).append(System.lineSeparator());
 		sb.append("Следующее напоминание в -->").append(System.lineSeparator());
 		sb.append(this.nextTime).append(System.lineSeparator());
 		return sb.toString();
@@ -207,12 +220,14 @@ public class Event {
 	@JsonIgnore
 	public String getReminder() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("Напоминание!");
+		sb.append("Напоминание!").append(System.lineSeparator());
 		sb.append(this.textEvent).append(System.lineSeparator());
 		
 		if(this.countEvent > 0 ) {
 			sb.append("Следующее напоминание -->").append(System.lineSeparator());
 			sb.append(this.nextTime).append(System.lineSeparator());
+			sb.append("Осталось напоминаний для данного события --> ");
+			sb.append(this.getCountAlarm());
 		} else {
 			sb.append("Событие завершено!");
 		}
