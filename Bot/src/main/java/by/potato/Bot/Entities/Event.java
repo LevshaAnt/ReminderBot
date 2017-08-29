@@ -3,6 +3,7 @@ package by.potato.Bot.Entities;
 import java.time.temporal.ChronoUnit;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -20,8 +21,8 @@ public class Event {
 	private long countLeftAlarm;
 	private ChronoUnit offsetEvent = null;
 	private ChronoUnit offsetAlarm = null;  //for --> "hours", "minutes", "days" "weeks", "months", "years"
-	private LocalDateTime beginTime;
-	private LocalDateTime nextTime;
+	private ZonedDateTime beginTime;
+	private ZonedDateTime nextTime;
 	private long nextTimeInLong;
 	private long idCreateUser;
 	private ZoneOffset clinetOffset;// = ZoneOffset.of("-05:00");
@@ -78,8 +79,8 @@ public class Event {
 				this.nextTime = this.directionFlag?
 									this.beginTime.plus(this.countLeftAlarm, this.offsetAlarm):
 									this.beginTime.minus(this.countAlarm - this.countLeftAlarm, this.offsetAlarm);
-								
-				this.nextTimeInLong = this.nextTime.toEpochSecond(clinetOffset);				
+												
+				this.nextTimeInLong = this.nextTime.toEpochSecond();
 				this.countLeftAlarm++;					
 			} else {
 				this.countLeftAlarm = 0;
@@ -130,17 +131,20 @@ public class Event {
 		this.countLeftAlarm = countLeftAlarm;
 	}
 
+	public ZonedDateTime getNextTime() {
+		return nextTime;
+	}
 
-	public LocalDateTime getBeginTime() {
+	public void setNextTime(ZonedDateTime nextTime) {
+		this.nextTime = nextTime;
+	}
+
+	public ZonedDateTime getBeginTime() {
 		return beginTime;
 	}
-
-	public void setBeginTime(LocalDateTime beginTime) {
+	
+	public void setBeginTime(ZonedDateTime beginTime) {
 		this.beginTime = beginTime;
-	}
-
-	public LocalDateTime getNextTime() {
-		return nextTime;
 	}
 
 	public long getIdCreateUser() {
@@ -206,13 +210,13 @@ public class Event {
 	public String getInfo() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Информация о событии").append(System.lineSeparator());
-		sb.append("Описание события -->").append(System.lineSeparator());
+		sb.append("Описание события --> ").append(System.lineSeparator());
 		sb.append(this.textEvent).append(System.lineSeparator());
-		sb.append("Число повторений события -->").append(this.countEvent).append(System.lineSeparator());
-		sb.append("Период события -->").append(this.offsetEvent).append(System.lineSeparator());
-		sb.append("Число напоминаний о событии -->").append(this.countAlarm).append(System.lineSeparator());
-		sb.append("Временной промежуток между напоминаниями -->").append(this.offsetAlarm).append(System.lineSeparator());
-		sb.append("Следующее напоминание в -->").append(System.lineSeparator());
+		sb.append("Число повторений события --> ").append(this.countEvent).append(System.lineSeparator());
+		sb.append("Период события --> ").append(this.offsetEvent).append(System.lineSeparator());
+		sb.append("Число напоминаний о событии --> ").append(this.countAlarm).append(System.lineSeparator());
+		sb.append("Временной промежуток между напоминаниями --> ").append(this.offsetAlarm).append(System.lineSeparator());
+		sb.append("Следующее напоминание в -->" ).append(System.lineSeparator());
 		sb.append(this.nextTime).append(System.lineSeparator());
 		return sb.toString();
 	}

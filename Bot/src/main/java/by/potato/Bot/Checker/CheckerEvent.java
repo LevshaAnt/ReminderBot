@@ -5,6 +5,8 @@ import static by.potato.Bot.MainBot.qEvent;
 import static by.potato.Bot.MainBot.dbhelper;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Iterator;
 
@@ -28,25 +30,29 @@ public class CheckerEvent implements Runnable {
 	public void run() {
 		
 		System.err.println("Размер пула событий -> " + qEvent.size());
-		LocalDateTime current = LocalDateTime.now();
+		
+		ZonedDateTime utc = ZonedDateTime.now(ZoneOffset.UTC);
+		long utcLong = utc.toEpochSecond();
 		
 		Iterator<Event> iter = qEvent.iterator();		
 		while(iter.hasNext()) {
 			Event e = iter.next();
 	
-			if(e.getNextTime().isBefore(current)) {
+			if(e.getNextTimeInLong() < utcLong) {
 				e.updateNextEventTime();
 				System.err.println("Время след события -> " +  e.getNextTime());
 				qMess.add(getNewMess(e));
 			}
 		}
 		
-		current.plus(10,ChronoUnit.MINUTES);
+		utc.plus(10,ChronoUnit.MINUTES);
+		utcLong = utc.toEpochSecond();
+		
 		iter = qEvent.iterator();
 		while(iter.hasNext()) {
 			Event e = iter.next();
 			
-			if(e.getNextTime().isBefore(current)) {
+			if(e.getNextTimeInLong() <utcLong) {
 				System.err.println("Перемещение в бд");
 				dbhelper.setEvent(e);
 				iter.remove();

@@ -1,5 +1,6 @@
 package by.potato.Bot.Entities;
 
+import java.time.DateTimeException;
 import java.time.ZoneOffset;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -52,6 +53,15 @@ public class Client {
 
 	public void setOffset(ZoneOffset offset) {
 		this.offset = offset;
+	}
+	
+	public boolean setOffset(String offsetstr) {
+		try {
+			this.offset = ZoneOffset.of(offsetstr);
+			return true;
+		} catch (DateTimeException e) {
+			return false;
+		}
 	}
 
 	@Override

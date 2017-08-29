@@ -5,10 +5,10 @@ import java.time.Instant;
 import by.potato.Bot.Entities.Client;
 import by.potato.Bot.Entities.Command;
 
-public class UserHolder {
+public class UserEventHolder {
 
 	private Client client;
-	private Long lastAppeal;
+	private Instant lastAppeal;
 	private Command dataType;
 	private boolean needTextInp;
 	private boolean error;
@@ -16,7 +16,7 @@ public class UserHolder {
 	private boolean flagEvent;
 	
 
-	public UserHolder(Client client) {
+	public UserEventHolder(Client client) {
 		this.client = client;
 		this.errorMess ="";
 		this.flagEvent = true;
@@ -32,8 +32,11 @@ public class UserHolder {
 	}
 
 	public void updateLastAppeal() {
-		this.lastAppeal = Instant.now().getEpochSecond();	
+		this.lastAppeal = Instant.now();
+	}
 
+	public Instant getLastAppeal() {
+		return lastAppeal;
 	}
 
 	public Client getClient() {

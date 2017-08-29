@@ -2,13 +2,15 @@ package by.potato.Bot.Checker;
 
 import org.telegram.telegrambots.api.objects.User;
 import org.telegram.telegrambots.api.objects.Message;
+import org.apache.commons.io.output.ThresholdingOutputStream;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 
 
 import by.potato.Bot.Entities.Event;
 import by.potato.Bot.Entities.Client;
 import by.potato.Bot.Entities.Command;
-import by.potato.Bot.Holders.UserHolder;
+import by.potato.Bot.Holders.UserEventHolder;
+import sun.util.calendar.ZoneInfo;
 import by.potato.Bot.Entities.CommandButton;
 
 import static by.potato.Bot.MainBot.qMess;
@@ -21,6 +23,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ArrayList;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -35,7 +39,7 @@ public class CheckerNewMess implements Runnable {
 	private Message mess;
 	private Long chartID;
 	private Integer messageID; 
-	private UserHolder userHolder;
+	private UserEventHolder userHolder;
 	private List<SendMessage> lMess;
 	private Event event;
 	
@@ -67,7 +71,7 @@ public class CheckerNewMess implements Runnable {
 			
 			Client client = dbhelper.getClient(this.chartID, name, surname);
 			
-			this.userHolder = new UserHolder(client);
+			this.userHolder = new UserEventHolder(client);
 			
 			mUserHolder.putIfAbsent(this.chartID, this.userHolder);
 		}
@@ -110,7 +114,11 @@ public class CheckerNewMess implements Runnable {
 	
 		case EVENT_DATE:	
 			try {
-				this.event.setBeginTime(LocalDateTime.parse(this.text, formatter));
+				LocalDateTime ldt = LocalDateTime.parse(this.text, formatter);
+				ZonedDateTime zdt = ZonedDateTime.ofLocal(ldt, ZoneId.systemDefault(),this.event.getClinetOffset());
+				this.event.setBeginTime(zdt);
+		
+				
 				this.userHolder.setError(false);
 			} catch (DateTimeParseException e) {
 				this.userHolder.setErrorMess(Command.ERROR_EVENT_DATE.getText());
@@ -122,7 +130,7 @@ public class CheckerNewMess implements Runnable {
 		case EVENT_COUNT_ALARM:
 			try {
 				long count = Long.parseLong(text);
-				if(count > 1) {
+				if(count > 0) {
 					if(this.userHolder.isFlagEvent()) {
 						this.event.setCountEvent(count);
 					} else {
@@ -380,7 +388,6 @@ public class CheckerNewMess implements Runnable {
 						
 					case EVENT_COUNT:
 						if(!this.userHolder.isError()) {//not problem in Input
-							this.event.setTextEvent(this.text);
 							this.text =Command.EVENT_PERIOD.getText();
 							mess.setText(Command.COMPLITE.getText());
 							mess.setReplyToMessageId(this.messageID);
@@ -389,7 +396,6 @@ public class CheckerNewMess implements Runnable {
 					
 					case EVENT_COUNT_ALARM:
 						if(!this.userHolder.isError()) {//not problem in Input
-							this.event.setTextEvent(this.text);
 							this.text =Command.EVENT_PERIOD_ALARM.getText();
 							mess.setText(Command.COMPLITE.getText());
 							mess.setReplyToMessageId(this.messageID);

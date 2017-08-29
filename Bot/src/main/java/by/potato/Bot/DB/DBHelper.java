@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -29,6 +31,8 @@ public class DBHelper {
 	private String token;
 	private String nameBot;
 	private DB db;
+	private ZoneOffset defaultZoneOffsetServer;
+	private ZoneOffset defaultZoneOffsetUser;
 	
 	public DBHelper() {
 		try {
@@ -39,13 +43,19 @@ public class DBHelper {
 			DBObject dbo = dbcoll.findOne();
 			this.token = (String) dbo.get("token");
 			this.nameBot = (String) dbo.get("name");
+			this.defaultZoneOffsetUser = ZoneOffset.of((String)dbo.get("defaultZoneOffsetUser"));
+			this.defaultZoneOffsetServer = ZoneOffset.UTC;
 			
 		} catch (UnknownHostException e) {
 			System.err.println("Error to connect DB " + e.getCause());
 		}
 		
 	}
-	
+
+	public ZoneOffset getDefaultZoneOffsetUser() {
+		return defaultZoneOffsetUser;
+	}
+
 	public String getToken() {
 		return this.token;
 	}
@@ -74,7 +84,7 @@ public class DBHelper {
 			}
 		}	
 		
-		return new Client(id,name,surname,ZoneOffset.of("+03:00"));
+		return new Client(id,name,surname,this.defaultZoneOffsetUser);
 	}
 	
 	public boolean setClient(Client user) {
@@ -102,10 +112,23 @@ public class DBHelper {
 		
 		DBCollection dbcoll = db.getCollection(this.collEvent);
 		
-		BasicDBObject whereQuery = new BasicDBObject();
-		whereQuery.put("nextTimeInLong", new BasicDBObject("$lt", needTime));
+
+		List<BasicDBObject> objList = new ArrayList<BasicDBObject>();
 		
-		DBCursor cursor = dbcoll.find(whereQuery);
+		BasicDBObject mainQuery = new BasicDBObject();
+		
+		BasicDBObject whereQueryFirst = new BasicDBObject();
+		whereQueryFirst.put("nextTimeInLong", new BasicDBObject("$lt", needTime).append("$gt", 1));
+		
+		BasicDBObject whereQuerySecond = new BasicDBObject();
+		whereQuerySecond.put("countEvent", new BasicDBObject("$ne", 0));
+		
+		objList.add(whereQueryFirst);
+		objList.add(whereQuerySecond);
+		
+		mainQuery.put("$and", objList);
+
+		DBCursor cursor = dbcoll.find(mainQuery);
 		
 		while (cursor.hasNext()) {
 			BasicDBObject bdbo = (BasicDBObject) cursor.next();
@@ -134,7 +157,7 @@ public class DBHelper {
 			
 			return true;
 		} catch (JsonProcessingException e) {
-			System.err.println("Event in BD is corrupt " + e.getMessage());
+			System.err.println("Error insert to BD " + e.getMessage());
 		}
 		
 		return false;
