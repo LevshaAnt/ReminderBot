@@ -111,7 +111,21 @@ public class CheckerNewMess implements Runnable {
 				this.event.setTextEvent(this.text);
 				this.userHolder.setError(false);
 			break;
-	
+			
+		case EVENT_COUNT_DELETE:	
+			try {
+				long index = Long.parseLong(text);
+				if(index > 0) {
+					this.userHolder.setError(false);
+				} else {
+					throw new NumberFormatException();
+				}
+			} catch (NumberFormatException e) {
+				this.userHolder.setErrorMess(Command.ERROR_EVENT_COUNT.getText());
+				this.userHolder.setError(true);
+			}
+			break;
+			
 		case EVENT_DATE:	
 			try {
 				LocalDateTime ldt = LocalDateTime.parse(this.text, formatter);
@@ -184,13 +198,25 @@ public class CheckerNewMess implements Runnable {
 			case EVENT_FUTURE:
 				mess.setText(dbhelper.getEvents(true, this.chartID));
 				mess.setReplyMarkup(CommandButton.getKeyboard(Command.EVENT_FUTURE));
-				this.userHolder.setNeedTextInp(true);
+				this.userHolder.setNeedTextInp(false);
+				
 				break;
 				
 			case EVENT_PAST:
 				mess.setText(dbhelper.getEvents(false, this.chartID));
 				mess.setReplyMarkup(CommandButton.getKeyboard(Command.EVENT_PAST));
 				this.userHolder.setNeedTextInp(false);
+				break;
+				
+			case EVENT_DELETE:
+				mess.setText(Command.EVENT_COUNT_DELETE.getText());
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.HIDE_BUTTON));
+				
+				
+				this.userHolder.setDataType(Command.EVENT_COUNT_DELETE);
+				this.userHolder.setNeedTextInp(true);
+				
+				this.event.setDirectionFlag(false);
 				break;
 			
 			case EVENT_DELETE_ALL:
@@ -397,9 +423,19 @@ public class CheckerNewMess implements Runnable {
 							mess.setReplyToMessageId(this.messageID);
 						} 
 						break;
+						
 					case EVENT_DATE:
 						if(!this.userHolder.isError()) {//not problem in Input
 							this.text =Command.EVENT_TYPE.getText();
+							mess.setText(Command.COMPLITE.getText());
+							mess.setReplyToMessageId(this.messageID);
+						}
+						break;
+						
+					case EVENT_COUNT_DELETE:
+						if(!this.userHolder.isError()) {//not problem in Input
+							dbhelper.deleteEvent(true, this.chartID,Integer.parseInt(text));
+							this.text =Command.EVENT_FUTURE.getText();
 							mess.setText(Command.COMPLITE.getText());
 							mess.setReplyToMessageId(this.messageID);
 						}
@@ -412,6 +448,7 @@ public class CheckerNewMess implements Runnable {
 							mess.setReplyToMessageId(this.messageID);
 						}
 						break;
+						
 					
 					case EVENT_COUNT_ALARM:
 						if(!this.userHolder.isError()) {//not problem in Input

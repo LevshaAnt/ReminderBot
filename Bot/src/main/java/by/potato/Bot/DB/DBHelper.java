@@ -7,7 +7,9 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -39,6 +41,7 @@ public class DBHelper {
 	private DB db;
 	private ZoneOffset defaultZoneOffsetServer;
 	private ZoneOffset defaultZoneOffsetUser;
+	private static Map<Long,Long> mLastSearch = new ConcurrentHashMap<>();
 	
 	public DBHelper() {
 		try {
@@ -154,11 +157,14 @@ public class DBHelper {
 	}
 	
 	public String getEvents(boolean future , Long userID) {//true --> future false --> last
+	
+		
 		StringBuilder sb = new StringBuilder();
 		
 		ZonedDateTime utc = ZonedDateTime.now(ZoneOffset.UTC);
 		long utcLong = utc.toEpochSecond();
-		
+	
+		mLastSearch.put(userID, utcLong);
 		
 		DBCollection dbcoll = db.getCollection(this.collEvent);
 		
@@ -214,6 +220,48 @@ public class DBHelper {
 		}
 
 		return sb.toString();
+	}
+	
+	public boolean deleteEvent(boolean future,Long userID, int number) {
+		
+		
+		ZonedDateTime utc = ZonedDateTime.now(ZoneOffset.UTC);
+		long utcLong = utc.toEpochSecond();
+	
+		
+		DBCollection dbcoll = db.getCollection(this.collEvent);
+		
+		List<BasicDBObject> objList = new ArrayList<BasicDBObject>();
+		
+		BasicDBObject mainQuery = new BasicDBObject();
+		
+		BasicDBObject whereQueryFirst = new BasicDBObject();
+		
+		if(future) {
+			whereQueryFirst.put("nextTimeInLong", new BasicDBObject("$gt", utcLong));
+		} else {
+			whereQueryFirst.put("nextTimeInLong", new BasicDBObject("$lt", utcLong));
+		}
+		
+		BasicDBObject whereQuerySecond = new BasicDBObject();
+		whereQuerySecond.put("idCreateUser", userID);
+		
+		objList.add(whereQueryFirst);
+		objList.add(whereQuerySecond);
+		
+		mainQuery.put("$and", objList);
+		
+		DBCursor cursor = dbcoll.find(mainQuery);
+		
+		try {
+			cursor.skip(number);
+			cursor.remove();	
+			mLastSearch.remove(userID);
+		} catch (MongoException e) {
+			System.err.println(e.getMessage() + "\n" + e.getCause());
+			return false;
+		}
+		return true;
 	}
 	
 	public boolean deleteEvents() {

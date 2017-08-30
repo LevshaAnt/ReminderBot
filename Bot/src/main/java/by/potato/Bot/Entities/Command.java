@@ -18,6 +18,7 @@ public enum Command {
 	EVENT_AFTER("После"),
     EVENT_COUNT("Количество повторений события \nположительное число"),
     EVENT_COUNT_ALARM("Количество напоминаний о событии \nположительное число"),
+    EVENT_COUNT_DELETE("Введите номер события которое необходимо удалить "),
     EVENT_PERIOD("Выбери необходимый период времени"),
     EVENT_PERIOD_ALARM("Выбери необходимый период времени"),
  
@@ -42,9 +43,7 @@ public enum Command {
     
 
     EVENT_FINISH("Событие создано!"),
-    	
-
-	
+    
 	
 	NOT_COMMAND("Нет команды"),
 
