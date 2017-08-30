@@ -453,7 +453,7 @@ public class CheckerNewMess implements Runnable {
 					case EVENT_COUNT_ALARM:
 						if(!this.userHolder.isError()) {//not problem in Input
 							this.text =Command.EVENT_PERIOD_ALARM.getText();
-							mess.setText(Command.COMPLITE.getText());
+							mess.setText(Command.EVENT_DELETE_INFO.getText());
 							mess.setReplyToMessageId(this.messageID);
 						}
 						break;

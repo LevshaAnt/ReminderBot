@@ -254,10 +254,20 @@ public class DBHelper {
 		DBCursor cursor = dbcoll.find(mainQuery);
 		
 		try {
-			cursor.skip(number);
-			cursor.remove();	
+			cursor.skip(number -1);
+			
+			ObjectMapper om = new ObjectMapper();
+			om.registerModule(new JavaTimeModule());
+			om.configure(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE,false);
+			
+			BasicDBObject bdbo = (BasicDBObject) cursor.next();
+			
+			Event event = om.readValue(bdbo.toString(), Event.class);
+
+			dbcoll.remove(bdbo);
+				
 			mLastSearch.remove(userID);
-		} catch (MongoException e) {
+		} catch (Exception e) {
 			System.err.println(e.getMessage() + "\n" + e.getCause());
 			return false;
 		}
