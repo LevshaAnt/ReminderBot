@@ -52,6 +52,7 @@ public class MainBot extends TelegramLongPollingBot{
 		this.checher();
 	}
 
+	@SuppressWarnings("deprecation")
 	private void checher() {
 		
 		ex.scheduleAtFixedRate(()->{
@@ -66,11 +67,9 @@ public class MainBot extends TelegramLongPollingBot{
 		
 		ex.scheduleAtFixedRate(new CheckerEvent(), 0, 30, TimeUnit.SECONDS);
 		ex.scheduleAtFixedRate(new ChecherEventFromDB(), 0, 10, TimeUnit.MINUTES);
-		ex.scheduleAtFixedRate(new CheckerUser(), 0, 1, TimeUnit.HOURS);
+		ex.scheduleAtFixedRate(new CheckerUser(), 0, 10, TimeUnit.MINUTES);
 	}
 	
-	
-
 	@Override
 	public String getBotUsername() {
 		return dbhelper.getNameBot();

@@ -2,7 +2,6 @@ package by.potato.Bot.DB;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -261,8 +260,6 @@ public class DBHelper {
 			om.configure(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE,false);
 			
 			BasicDBObject bdbo = (BasicDBObject) cursor.next();
-			
-			Event event = om.readValue(bdbo.toString(), Event.class);
 
 			dbcoll.remove(bdbo);
 				

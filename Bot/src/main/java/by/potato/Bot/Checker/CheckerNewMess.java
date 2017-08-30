@@ -1,8 +1,10 @@
 package by.potato.Bot.Checker;
 
 import org.telegram.telegrambots.api.objects.User;
+
+import java.util.regex.*;
+
 import org.telegram.telegrambots.api.objects.Message;
-import org.apache.commons.io.output.ThresholdingOutputStream;
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 
 
@@ -10,7 +12,6 @@ import by.potato.Bot.Entities.Event;
 import by.potato.Bot.Entities.Client;
 import by.potato.Bot.Entities.Command;
 import by.potato.Bot.Holders.UserEventHolder;
-import sun.util.calendar.ZoneInfo;
 import by.potato.Bot.Entities.CommandButton;
 
 import static by.potato.Bot.MainBot.qMess;
@@ -34,7 +35,8 @@ import java.time.format.DateTimeParseException;
 public class CheckerNewMess implements Runnable {
 
 	private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yy HH.mm");
-			
+	private static final Pattern pattern = Pattern.compile("^[-+]{1}\\d{2}:\\d{2}");
+	
 	private String text;
 	private Message mess;
 	private Long chartID;
@@ -161,6 +163,16 @@ public class CheckerNewMess implements Runnable {
 			}
 			break;
 			
+		case SETTING_INFO:
+			Matcher m = pattern.matcher(text);
+			if(m.find()) {
+				this.userHolder.getClient().setOffset(text);
+			} else {
+				this.userHolder.setErrorMess(Command.REPEAT.getText());
+				this.userHolder.setError(true);
+			}
+			break;
+			
 		default:
 			break;
 		}
@@ -199,7 +211,6 @@ public class CheckerNewMess implements Runnable {
 				mess.setText(dbhelper.getEvents(true, this.chartID));
 				mess.setReplyMarkup(CommandButton.getKeyboard(Command.EVENT_FUTURE));
 				this.userHolder.setNeedTextInp(false);
-				
 				break;
 				
 			case EVENT_PAST:
@@ -210,12 +221,9 @@ public class CheckerNewMess implements Runnable {
 				
 			case EVENT_DELETE:
 				mess.setText(Command.EVENT_COUNT_DELETE.getText());
-				mess.setReplyMarkup(CommandButton.getKeyboard(Command.HIDE_BUTTON));
-				
-				
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.HIDE_BUTTON));	
 				this.userHolder.setDataType(Command.EVENT_COUNT_DELETE);
 				this.userHolder.setNeedTextInp(true);
-				
 				this.event.setDirectionFlag(false);
 				break;
 			
@@ -398,10 +406,15 @@ public class CheckerNewMess implements Runnable {
 				mess.setReplyMarkup(CommandButton.getKeyboard(Command.START));
 				this.userHolder.setNeedTextInp(false);
 				migrationEvent();
-				
 				System.out.println(event.getInfo());
 				break;
 			
+			case SETTING:
+				mess.setText(Command.SETTING_INFO.getText());
+				this.userHolder.setDataType(Command.SETTING_INFO);
+				this.userHolder.setNeedTextInp(true);
+				break;	
+				
 				
 			default:
 				
@@ -454,6 +467,14 @@ public class CheckerNewMess implements Runnable {
 						if(!this.userHolder.isError()) {//not problem in Input
 							this.text =Command.EVENT_PERIOD_ALARM.getText();
 							mess.setText(Command.EVENT_DELETE_INFO.getText());
+							mess.setReplyToMessageId(this.messageID);
+						}
+						break;
+						
+					case SETTING_INFO:
+						if(!this.userHolder.isError()) {//not problem in Input
+							this.text =Command.START.getText();
+							mess.setText(Command.COMPLITE.getText());
 							mess.setReplyToMessageId(this.messageID);
 						}
 						break;
