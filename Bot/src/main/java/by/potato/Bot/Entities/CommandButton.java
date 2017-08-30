@@ -32,8 +32,7 @@ public class CommandButton {
 		    keyboardList.add( getKeyboardRow(Command.EVENT.getText()));
 		    keyboardList.add( getKeyboardRow(Command.ACTIVATORS.getText()));
 		    keyboardList.add( getKeyboardRow(Command.IDEA.getText()));
-		    keyboardList.add( getKeyboardRow(Command.SETTING.getText()));
-		    
+		    keyboardList.add( getKeyboardRow(Command.SETTING.getText()));	    
 		break;
   
 		case EVENT:
@@ -46,6 +45,16 @@ public class CommandButton {
 		case EVENT_TYPE:
 			keyboardList.add( getKeyboardRow(Command.EVENT_BEFORE.getText()));
 			keyboardList.add( getKeyboardRow(Command.EVENT_AFTER.getText()));
+		break;
+		
+		case EVENT_FUTURE:
+			keyboardList.add( getKeyboardRow(Command.EVENT_DELETE.getText()));
+			keyboardList.add( getKeyboardRow(Command.MENU_GENERAL_RETURN.getText()));
+		break;
+		
+		case EVENT_PAST:
+			keyboardList.add( getKeyboardRow(Command.EVENT_DELETE_ALL.getText()));
+			keyboardList.add( getKeyboardRow(Command.MENU_GENERAL_RETURN.getText()));
 		break;
 			
 		case EVENT_PERIOD:

@@ -115,7 +115,7 @@ public class CheckerNewMess implements Runnable {
 		case EVENT_DATE:	
 			try {
 				LocalDateTime ldt = LocalDateTime.parse(this.text, formatter);
-				ZonedDateTime zdt = ZonedDateTime.ofLocal(ldt, ZoneId.systemDefault(),this.event.getClinetOffset());
+				ZonedDateTime zdt = ZonedDateTime.ofLocal(ldt, ZoneId.systemDefault(),this.event.getClientOffset());
 				this.event.setBeginTime(zdt);
 		
 				
@@ -178,6 +178,25 @@ public class CheckerNewMess implements Runnable {
 			case EVENT:
 				mess.setText(Command.EVENT_INFO.getText());					
 				mess.setReplyMarkup(CommandButton.getKeyboard(Command.EVENT));
+				this.userHolder.setNeedTextInp(false);
+				break;
+				
+			case EVENT_FUTURE:
+				mess.setText(dbhelper.getEvents(true, this.chartID));
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.EVENT_FUTURE));
+				this.userHolder.setNeedTextInp(true);
+				break;
+				
+			case EVENT_PAST:
+				mess.setText(dbhelper.getEvents(false, this.chartID));
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.EVENT_PAST));
+				this.userHolder.setNeedTextInp(false);
+				break;
+			
+			case EVENT_DELETE_ALL:
+				mess.setText(Command.EVENT_DELETE_INFO.getText());
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));		
+				dbhelper.deleteEvents();
 				this.userHolder.setNeedTextInp(false);
 				break;
 				

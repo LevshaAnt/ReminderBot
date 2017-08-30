@@ -38,6 +38,9 @@ public class CheckerEvent implements Runnable {
 		while(iter.hasNext()) {
 			Event e = iter.next();
 	
+			System.err.println("Check event send message");
+			System.err.println("NextTimeInLong " + e.getNextTimeInLong() );
+			System.err.println("CurrentTime    " + utcLong);
 			if(e.getNextTimeInLong() < utcLong) {
 				e.updateNextEventTime();
 				System.err.println("Время след события -> " +  e.getNextTime());
@@ -45,14 +48,17 @@ public class CheckerEvent implements Runnable {
 			}
 		}
 		
-		utc.plus(10,ChronoUnit.MINUTES);
+		utc.plus(1,ChronoUnit.MINUTES);
 		utcLong = utc.toEpochSecond();
 		
 		iter = qEvent.iterator();
 		while(iter.hasNext()) {
 			Event e = iter.next();
 			
-			if(e.getNextTimeInLong() <utcLong) {
+			System.err.println("Check event set db");
+			System.err.println("NextTimeInLong         " + e.getNextTimeInLong() );
+			System.err.println("CurrentTime + 10 minut " + utcLong);
+			if(e.getNextTimeInLong() > utcLong) {
 				System.err.println("Перемещение в бд");
 				dbhelper.setEvent(e);
 				iter.remove();

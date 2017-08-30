@@ -20,6 +20,7 @@ public enum Command {
     EVENT_COUNT_ALARM("Количество напоминаний о событии \nположительное число"),
     EVENT_PERIOD("Выбери необходимый период времени"),
     EVENT_PERIOD_ALARM("Выбери необходимый период времени"),
+ 
     MINUTE("минута"),
 	HOUR("час"),
 	DAY("день"),
@@ -54,6 +55,10 @@ public enum Command {
 	
 	EVENT_FUTURE("Грядущие события"),
 	EVENT_PAST("Завершённые события"),
+	EVENT_DELETE("Удалить событие"),
+	EVENT_DELETE_ALL("Удалить все события"),
+	EVENT_DELETE_INFO("Удалено!"),
+	EVENT_NOT("Нет событий."),
 	MENU_GENERAL_RETURN("Главное меню"),
 	ACTIVATORS_GROUP("Группы"),
 	ACTIVATORS_NEW("Новый пользователь");
