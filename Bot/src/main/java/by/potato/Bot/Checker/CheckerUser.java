@@ -15,8 +15,8 @@ public class CheckerUser implements Runnable {
 	@Override
 	public void run() {
 		
-		Instant inst = Instant.now().minus(1,ChronoUnit.HOURS);
-		
+		Instant inst = Instant.now().minus(10,ChronoUnit.MINUTES);//!!!!
+		/*TODO*/
 		Iterator<Entry<Long, UserEventHolder>> it = mUserHolder.entrySet().iterator();
 		while (it.hasNext()) {
 		    Entry<Long, UserEventHolder> pair = it.next();

@@ -83,7 +83,7 @@ public class CheckerNewMess implements Runnable {
 		if(mMessCreate.containsKey(this.chartID)) {
 			this.event = mMessCreate.get(this.chartID);
 		} else {
-			this.event = new Event(this.chartID);
+			this.event = new Event(this.chartID,this.userHolder.getClient().getOffset());
 			mMessCreate.put(this.chartID, this.event);//create new event to map
 		}
 	}
@@ -131,10 +131,9 @@ public class CheckerNewMess implements Runnable {
 		case EVENT_DATE:	
 			try {
 				LocalDateTime ldt = LocalDateTime.parse(this.text, formatter);
-				ZonedDateTime zdt = ZonedDateTime.ofLocal(ldt, ZoneId.systemDefault(),this.event.getClientOffset());
+				ZonedDateTime zdt = ZonedDateTime.ofLocal(ldt, ZoneId.systemDefault(),this.userHolder.getClient().getOffset());
+				this.event.setClientOffset(this.userHolder.getClient().getOffset());
 				this.event.setBeginTime(zdt);
-		
-				
 				this.userHolder.setError(false);
 			} catch (DateTimeParseException e) {
 				this.userHolder.setErrorMess(Command.ERROR_EVENT_DATE.getText());
@@ -184,6 +183,7 @@ public class CheckerNewMess implements Runnable {
 		
 		this.userHolder.updateLastAppeal();
 		System.out.println(this.text);
+		System.err.println(this.userHolder.getClient());
 		
 		boolean repeat = true;
 		while(repeat) {

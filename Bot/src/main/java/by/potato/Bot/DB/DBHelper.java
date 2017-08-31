@@ -143,7 +143,8 @@ public class DBHelper {
 			
 			try {
 				ObjectMapper om = new ObjectMapper();
-				om.findAndRegisterModules();
+				om.registerModule(new JavaTimeModule());
+				om.configure(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE,false);
 				
 				Event event = om.readValue(bdbo.toString(), Event.class);
 				eventMap.add(event);

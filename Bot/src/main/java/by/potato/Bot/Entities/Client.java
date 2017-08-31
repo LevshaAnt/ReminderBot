@@ -23,6 +23,11 @@ public class Client {
 		this.offset = offset;
 	}
 
+	@Override
+	public String toString() {
+		return "Client [id=" + id + ", offset=" + offset + "]";
+	}
+
 	public Long getId() {
 		return id;
 	}

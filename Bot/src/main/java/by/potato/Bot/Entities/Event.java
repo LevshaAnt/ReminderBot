@@ -34,9 +34,10 @@ public class Event {
 		this.countAlarm = 0;
 	}
 	
-	public Event(long idCreateUser) {
+	public Event(long idCreateUser, ZoneOffset zoneOffset) {
 		this();
 		this.idCreateUser = idCreateUser;
+		this.clientOffset = zoneOffset;
 	}
 	
 	public long getNextTimeInLong() {
