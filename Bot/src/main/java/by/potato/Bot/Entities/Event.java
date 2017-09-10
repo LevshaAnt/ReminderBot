@@ -13,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(value = { "_id" })
 public class Event {
+	private String textDescription;
 	private String textEvent;
 	private String uuid;
 	private long countEvent;
@@ -39,7 +40,15 @@ public class Event {
 		this.idCreateUser = idCreateUser;
 		this.clientOffset = zoneOffset;
 	}
-	
+	 
+	public String getTextDescription() {
+		return textDescription;
+	}
+
+	public void setTextDescription(String textDescription) {
+		this.textDescription = textDescription;
+	}
+
 	public long getNextTimeInLong() {
 		return nextTimeInLong;
 	}
@@ -211,6 +220,8 @@ public class Event {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Информация о событии").append(System.lineSeparator());
 		sb.append("Описание события --> ").append(System.lineSeparator());
+		sb.append(this.textDescription).append(System.lineSeparator());
+		sb.append("Текст события --> ").append(System.lineSeparator());
 		sb.append(this.textEvent).append(System.lineSeparator());
 		sb.append("Число повторений события --> ").append(this.countEvent).append(System.lineSeparator());
 		sb.append("Период события --> ").append(this.offsetEvent).append(System.lineSeparator());
@@ -229,6 +240,7 @@ public class Event {
 		
 		if(this.countEvent > 0 ) {
 			sb.append("Напоминание!").append(System.lineSeparator());
+			sb.append(this.textDescription).append(System.lineSeparator());
 			sb.append(this.textEvent).append(System.lineSeparator());
 			sb.append("Следующее напоминание -->").append(System.lineSeparator());
 			sb.append(this.nextTime).append(System.lineSeparator());

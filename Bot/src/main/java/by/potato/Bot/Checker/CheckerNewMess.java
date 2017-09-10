@@ -34,6 +34,21 @@ import java.time.format.DateTimeParseException;
 
 public class CheckerNewMess implements Runnable {
 
+	private enum Const {
+		START_POSITION(0),
+		MAX_POSITION_FOR_DESCRIPTION(50);
+		
+		private int pos;
+
+		private Const(int pos) {
+			this.pos = pos;
+		}
+		
+		public int getPosition() {
+			return this.pos;
+		}
+	}
+	
 	private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yy HH.mm");
 	private static final Pattern pattern = Pattern.compile("^[-+]{1}\\d{2}:\\d{2}");
 	
@@ -110,8 +125,21 @@ public class CheckerNewMess implements Runnable {
 		
 		switch (dataType) {
 		case EVENT_DESCRIPTION:
+				if(this.text.length()>Const.MAX_POSITION_FOR_DESCRIPTION.getPosition()) {
+					this.text = this.text.substring(Const.START_POSITION.getPosition(),Const.MAX_POSITION_FOR_DESCRIPTION.getPosition()); 
+				}
+						
+				this.event.setTextDescription(this.text);
+				this.userHolder.setError(false);
+			break;
+			
+		case EVENT_TEXT:
 				this.event.setTextEvent(this.text);
 				this.userHolder.setError(false);
+			 break;
+			
+		case IDEA:
+				dbhelper.setIdea(this.text,this.chartID);
 			break;
 			
 		case EVENT_COUNT_DELETE:	
@@ -129,12 +157,13 @@ public class CheckerNewMess implements Runnable {
 			break;
 			
 		case EVENT_DATE:	
-			try {
-				LocalDateTime ldt = LocalDateTime.parse(this.text, formatter);
-				ZonedDateTime zdt = ZonedDateTime.ofLocal(ldt, ZoneId.systemDefault(),this.userHolder.getClient().getOffset());
+			try {		
+				LocalDateTime ldt = LocalDateTime.parse(this.text, formatter);				
+				ZonedDateTime zdt = ZonedDateTime.of(ldt, ZoneId.ofOffset("GMT",this.userHolder.getClient().getOffset()));
 				this.event.setClientOffset(this.userHolder.getClient().getOffset());
 				this.event.setBeginTime(zdt);
 				this.userHolder.setError(false);
+			
 			} catch (DateTimeParseException e) {
 				this.userHolder.setErrorMess(Command.ERROR_EVENT_DATE.getText());
 				this.userHolder.setError(true);
@@ -180,10 +209,8 @@ public class CheckerNewMess implements Runnable {
 	@Override
 	public void run() {
 	
-		
 		this.userHolder.updateLastAppeal();
 		System.out.println(this.text);
-		System.err.println(this.userHolder.getClient());
 		
 		boolean repeat = true;
 		while(repeat) {
@@ -229,7 +256,7 @@ public class CheckerNewMess implements Runnable {
 			
 			case EVENT_DELETE_ALL:
 				mess.setText(Command.EVENT_DELETE_INFO.getText());
-				mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));		
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.EVENT_PAST));		
 				dbhelper.deleteEvents();
 				this.userHolder.setNeedTextInp(false);
 				break;
@@ -238,6 +265,13 @@ public class CheckerNewMess implements Runnable {
 				mess.setText(Command.EVENT_DESCRIPTION.getText());	
 				mess.setReplyMarkup(CommandButton.getKeyboard(Command.HIDE_BUTTON));
 				this.userHolder.setDataType(Command.EVENT_DESCRIPTION);
+				this.userHolder.setNeedTextInp(true);
+				break;
+				
+			case EVENT_TEXT:
+				mess.setText(Command.EVENT_TEXT.getText());	
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.HIDE_BUTTON));
+				this.userHolder.setDataType(Command.EVENT_TEXT);
 				this.userHolder.setNeedTextInp(true);
 				break;
 				
@@ -297,11 +331,13 @@ public class CheckerNewMess implements Runnable {
 					mess.setText(Command.COMPLITE.getText());
 					
 					repeat = true;
+					
 				} else {
 					this.event.setOffsetAlarm(ChronoUnit.MINUTES);
 					mess.setText(Command.FINISH.getText());
 					mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
 					this.userHolder.setNeedTextInp(false);
+					this.userHolder.setFlagEvent(true);
 				}
 				
 				break;
@@ -311,6 +347,7 @@ public class CheckerNewMess implements Runnable {
 					this.event.setOffsetEvent(ChronoUnit.HOURS);
 					this.text = Command.EVENT_COUNT_ALARM.getText();
 					this.userHolder.setFlagEvent(false);
+					
 					repeat = true;
 					
 					mess.setReplyMarkup(CommandButton.getKeyboard(Command.HIDE_BUTTON));
@@ -321,6 +358,7 @@ public class CheckerNewMess implements Runnable {
 					mess.setText(Command.FINISH.getText());
 					mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
 					this.userHolder.setNeedTextInp(false);
+					this.userHolder.setFlagEvent(true);
 				}
 
 				break;
@@ -340,6 +378,7 @@ public class CheckerNewMess implements Runnable {
 					mess.setText(Command.FINISH.getText());
 					mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
 					this.userHolder.setNeedTextInp(false);
+					this.userHolder.setFlagEvent(true);
 				}
 
 				break;
@@ -359,6 +398,7 @@ public class CheckerNewMess implements Runnable {
 					mess.setText(Command.FINISH.getText());
 					mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
 					this.userHolder.setNeedTextInp(false);
+					this.userHolder.setFlagEvent(true);
 				}
 				
 				break;
@@ -378,6 +418,7 @@ public class CheckerNewMess implements Runnable {
 					mess.setText(Command.FINISH.getText());
 					mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
 					this.userHolder.setNeedTextInp(false);
+					this.userHolder.setFlagEvent(true);
 				}
 				
 				break;
@@ -397,6 +438,7 @@ public class CheckerNewMess implements Runnable {
 					mess.setText(Command.FINISH.getText());
 					mess.setReplyMarkup(CommandButton.getKeyboard(Command.FINISH));
 					this.userHolder.setNeedTextInp(false);
+					this.userHolder.setFlagEvent(true);
 				}
 				
 				break;
@@ -415,7 +457,19 @@ public class CheckerNewMess implements Runnable {
 				this.userHolder.setNeedTextInp(true);
 				break;	
 				
-				
+			case IDEA:
+				mess.setText(Command.IDEA_INFO.getText());
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.HIDE_BUTTON));
+				this.userHolder.setDataType(Command.IDEA);
+				this.userHolder.setNeedTextInp(true);
+			break;
+			
+			case ACTIVATORS:
+				mess.setText("Функционал в разработке");
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.START));
+				this.userHolder.setNeedTextInp(false);
+			break;
+			
 			default:
 				
 				if(this.userHolder.isNeedTextInp()) {
@@ -431,7 +485,23 @@ public class CheckerNewMess implements Runnable {
 					switch (this.userHolder.getDataType()) {
 					case EVENT_DESCRIPTION:
 						if(!this.userHolder.isError()) {//not problem in Input
+							this.text =Command.EVENT_TEXT.getText();
+							mess.setText(Command.COMPLITE.getText());
+							mess.setReplyToMessageId(this.messageID);
+						} 
+						break;
+						
+					case EVENT_TEXT:
+						if(!this.userHolder.isError()) {//not problem in Input
 							this.text =Command.EVENT_DATE.getText();
+							mess.setText(Command.COMPLITE.getText());
+							mess.setReplyToMessageId(this.messageID);
+						} 
+						break;	
+						
+					case IDEA:
+						if(!this.userHolder.isError()) {//not problem in Input
+							this.text =Command.START.getText();
 							mess.setText(Command.COMPLITE.getText());
 							mess.setReplyToMessageId(this.messageID);
 						} 

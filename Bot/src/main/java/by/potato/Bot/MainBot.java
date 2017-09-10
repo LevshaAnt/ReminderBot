@@ -66,8 +66,8 @@ public class MainBot extends TelegramLongPollingBot{
 		}, 0, 33, TimeUnit.MILLISECONDS);
 		
 		ex.scheduleAtFixedRate(new CheckerEvent(), 0, 30, TimeUnit.SECONDS);
-		ex.scheduleAtFixedRate(new ChecherEventFromDB(), 0, 10, TimeUnit.MINUTES);
-		ex.scheduleAtFixedRate(new CheckerUser(), 0, 10, TimeUnit.MINUTES);
+		ex.scheduleAtFixedRate(new ChecherEventFromDB(), 0, 1, TimeUnit.MINUTES);
+		ex.scheduleAtFixedRate(new CheckerUser(), 0, 1, TimeUnit.MINUTES);
 	}
 	
 	@Override

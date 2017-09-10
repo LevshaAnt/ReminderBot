@@ -11,6 +11,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,13 +36,14 @@ public class DBHelper {
 	private String collConnect = "connect";
 	private String collUser = "user";
 	private String collEvent = "event";
+	private String collIdea = "idea";
 	private String token;
 	private String nameBot;
+	private Long idMaker;
 	private DB db;
-	private ZoneOffset defaultZoneOffsetServer;
 	private ZoneOffset defaultZoneOffsetUser;
 	private static Map<Long,Long> mLastSearch = new ConcurrentHashMap<>();
-	
+
 	public DBHelper() {
 		try {
 			mongo = new MongoClient( "localhost" , 27017 );
@@ -52,7 +54,7 @@ public class DBHelper {
 			this.token = (String) dbo.get("token");
 			this.nameBot = (String) dbo.get("name");
 			this.defaultZoneOffsetUser = ZoneOffset.of((String)dbo.get("defaultZoneOffsetUser"));
-			this.defaultZoneOffsetServer = ZoneOffset.UTC;
+			this.idMaker =  ((Number) dbo.get("idMaker")).longValue();
 			
 		} catch (UnknownHostException e) {
 			System.err.println("Error to connect DB " + e.getCause());
@@ -62,6 +64,10 @@ public class DBHelper {
 
 	public ZoneOffset getDefaultZoneOffsetUser() {
 		return defaultZoneOffsetUser;
+	}
+
+	public Long getIdMaker() {
+		return idMaker;
 	}
 
 	public String getToken() {
@@ -131,6 +137,8 @@ public class DBHelper {
 		BasicDBObject whereQuerySecond = new BasicDBObject();
 		whereQuerySecond.put("countEvent", new BasicDBObject("$ne", 0));
 		
+		
+		
 		objList.add(whereQueryFirst);
 		objList.add(whereQuerySecond);
 		
@@ -169,6 +177,8 @@ public class DBHelper {
 		DBCollection dbcoll = db.getCollection(this.collEvent);
 		
 		List<BasicDBObject> objList = new ArrayList<BasicDBObject>();
+		
+	
 		
 		BasicDBObject mainQuery = new BasicDBObject();
 		
@@ -234,6 +244,7 @@ public class DBHelper {
 		List<BasicDBObject> objList = new ArrayList<BasicDBObject>();
 		
 		BasicDBObject mainQuery = new BasicDBObject();
+	
 		
 		BasicDBObject whereQueryFirst = new BasicDBObject();
 		
@@ -313,6 +324,25 @@ public class DBHelper {
 		}
 		
 		return false;
+	}
+	
+	public boolean setIdea(String idea, Long userId) {
+		
+		
+		DBCollection dbcoll = db.getCollection(this.collIdea);
+		
+		BasicDBObject document = new BasicDBObject();
+		document.put("userID", userId);
+		document.put("text idea", idea);
+
+		try {
+			dbcoll.insert(document);
+		} catch (MongoException e) {
+			System.err.println( e.getMessage());
+			return false;
+		}
+		
+		return true;
 	}
 	
 	

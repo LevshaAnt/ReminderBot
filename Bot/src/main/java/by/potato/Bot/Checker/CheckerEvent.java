@@ -36,10 +36,7 @@ public class CheckerEvent implements Runnable {
 		Iterator<Event> iter = qEvent.iterator();		
 		while(iter.hasNext()) {
 			Event e = iter.next();
-	
-			System.err.println("Check event send message");
-			System.err.println("NextTimeInLong " + e.getNextTimeInLong() );
-			System.err.println("CurrentTime    " + utcLong);
+
 			if(e.getNextTimeInLong() < utcLong) {
 				e.updateNextEventTime();
 				System.err.println("Время след события -> " +  e.getNextTime());

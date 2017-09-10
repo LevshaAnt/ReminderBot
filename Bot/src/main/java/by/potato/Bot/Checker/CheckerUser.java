@@ -15,10 +15,11 @@ public class CheckerUser implements Runnable {
 	@Override
 	public void run() {
 		
-		Instant inst = Instant.now().minus(10,ChronoUnit.MINUTES);//!!!!
-		/*TODO*/
+		Instant inst = Instant.now().minus(1,ChronoUnit.MINUTES);
+	
 		Iterator<Entry<Long, UserEventHolder>> it = mUserHolder.entrySet().iterator();
 		while (it.hasNext()) {
+			
 		    Entry<Long, UserEventHolder> pair = it.next();
 		    	
 		    	UserEventHolder uh = pair.getValue();

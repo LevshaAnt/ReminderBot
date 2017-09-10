@@ -18,7 +18,7 @@ public class ChecherEventFromDB implements Runnable {
 		
 		System.err.println("From db");
 		ZonedDateTime utc = ZonedDateTime.now(ZoneOffset.UTC)
-								.plus(10, ChronoUnit.MINUTES);
+								.plus(1, ChronoUnit.MINUTES);
 		
 		long timeInLong = utc.toEpochSecond();
 		
