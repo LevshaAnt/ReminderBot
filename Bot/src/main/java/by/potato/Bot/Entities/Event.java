@@ -101,9 +101,10 @@ public class Event {
 	}
 
 	public void updateNextEventTime() {
+
 		if(this.countEvent > 0) { //есть ещё события запланированные
 			
-			if(this.countLeftAlarm <= this.countAlarm) {	
+			if(this.countLeftAlarm < this.countAlarm) {	
 				this.nextTime = this.directionFlag?
 									this.beginTime.plus(this.countOffsetAlart * this.countLeftAlarm , this.offsetAlarm):
 									this.beginTime.minus( (this.countAlarm - this.countLeftAlarm + 1) * this.countOffsetAlart, this.offsetAlarm);
@@ -239,15 +240,16 @@ public class Event {
 	public StringBuilder getInfo() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Информация о событии").append(System.lineSeparator());
-		sb.append("Описание события --> ").append(System.lineSeparator());
+		sb.append("Описание события >> ").append(System.lineSeparator());
 		sb.append(this.textDescription).append(System.lineSeparator());
-		sb.append("Текст события --> ").append(System.lineSeparator());
+		sb.append("Текст события >> ").append(System.lineSeparator());
 		sb.append(this.textEvent).append(System.lineSeparator());
-		sb.append("Число повторений события --> ").append(this.countEvent).append(System.lineSeparator());
-		sb.append("Период события --> ").append(this.offsetEvent).append(System.lineSeparator());
-		sb.append("Число напоминаний о событии --> ").append(this.countAlarm - this.countLeftAlarm + 1).append(System.lineSeparator());
-		sb.append("Период напоминания --> ").append(this.offsetAlarm).append(System.lineSeparator());
-		sb.append("Следующее напоминание в -->" ).append(System.lineSeparator());
+		sb.append("Число повторений события >> ").append(this.countEvent).append(System.lineSeparator());
+		sb.append("Период события >> ").append(this.offsetEvent + " * " + this.countOffsetEvent).append(System.lineSeparator());
+		sb.append("Период события >> ").append(this.offsetEvent).append(System.lineSeparator());
+		sb.append("Число напоминаний о событии >> ").append(this.countAlarm - this.countLeftAlarm + 1).append(System.lineSeparator());
+		sb.append("Период напоминания >> ").append(this.offsetAlarm + " * " + this.getCountOffsetAlart()).append(System.lineSeparator());
+		sb.append("Следующее напоминание в >>" ).append(System.lineSeparator());
 		sb.append(this.nextTime).append(System.lineSeparator());
 		
 		return new StringBuilder(sb);
@@ -260,12 +262,14 @@ public class Event {
 		
 		if(this.countEvent > 0 ) {
 			sb.append("Напоминание!").append(System.lineSeparator());
+			sb.append("Описание события >> ").append(System.lineSeparator());
 			sb.append(this.textDescription).append(System.lineSeparator());
+			sb.append("Текст события >> ").append(System.lineSeparator());
 			sb.append(this.textEvent).append(System.lineSeparator());
-			sb.append("Следующее напоминание -->").append(System.lineSeparator());
+			sb.append("Следующее напоминание >> ").append(System.lineSeparator());
 			sb.append(this.nextTime).append(System.lineSeparator());
-			sb.append("Осталось событий --> ").append(this.countEvent).append(System.lineSeparator());
-			sb.append("Осталось напоминаний для текущего события --> ");
+			sb.append("Осталось событий >> ").append(this.countEvent).append(System.lineSeparator());
+			sb.append("Осталось напоминаний для текущего события >> ");
 			sb.append(this.countAlarm - this.countLeftAlarm + 1);
 			
 		} else {

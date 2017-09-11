@@ -316,9 +316,6 @@ public class DBHelper {
 	public boolean setEventorUpdateIfPresent(Event event) {
 		DBCollection dbcoll = db.getCollection(this.collEvent);
 		
-		System.err.println(event);
-		
-		
 		BasicDBObject whereQuery = new BasicDBObject();
 		whereQuery.put("uuid", event.getUuid());		
 		
