@@ -19,20 +19,23 @@ public class Event {
 	private long countEvent;
 	private long countAlarm;
 	private long countLeftAlarm;
+	private long countOffsetEvent;
+	private long countOffsetAlart;
 	private ChronoUnit offsetEvent = null;
-	private ChronoUnit offsetAlarm = null;  //for --> "hours", "minutes", "days" "weeks", "months", "years"
+	private ChronoUnit offsetAlarm = null; 
 	private ZonedDateTime beginTime;
 	private ZonedDateTime nextTime;
 	private long nextTimeInLong;
 	private long idCreateUser;
-	private ZoneOffset clientOffset;// = ZoneOffset.of("-05:00");
+	private ZoneOffset clientOffset;
 	private Set<Integer> idUsers;
-	private Boolean directionFlag; // false -- before; true -- after;
+	private Boolean directionFlag; 
 	
 	public Event() {
 		this.idUsers = new HashSet<Integer>();
 		this.uuid = UUID.randomUUID().toString();
 		this.countAlarm = 0;
+		this.countLeftAlarm = 1;
 	}
 	
 	public Event(long idCreateUser, ZoneOffset zoneOffset) {
@@ -41,6 +44,22 @@ public class Event {
 		this.clientOffset = zoneOffset;
 	}
 	 
+	public long getCountOffsetEvent() {
+		return countOffsetEvent;
+	}
+
+	public void setCountOffsetEvent(long countOffsetEvent) {
+		this.countOffsetEvent = countOffsetEvent;
+	}
+
+	public long getCountOffsetAlart() {
+		return countOffsetAlart;
+	}
+
+	public void setCountOffsetAlart(long countOffsetAlart) {
+		this.countOffsetAlart = countOffsetAlart;
+	}
+
 	public String getTextDescription() {
 		return textDescription;
 	}
@@ -84,16 +103,17 @@ public class Event {
 	public void updateNextEventTime() {
 		if(this.countEvent > 0) { //есть ещё события запланированные
 			
-			if(this.countLeftAlarm < this.countAlarm) {	
+			if(this.countLeftAlarm <= this.countAlarm) {	
 				this.nextTime = this.directionFlag?
-									this.beginTime.plus(this.countLeftAlarm, this.offsetAlarm):
-									this.beginTime.minus(this.countAlarm - this.countLeftAlarm, this.offsetAlarm);
+									this.beginTime.plus(this.countOffsetAlart * this.countLeftAlarm , this.offsetAlarm):
+									this.beginTime.minus( (this.countAlarm - this.countLeftAlarm) * this.countOffsetAlart, this.offsetAlarm);
 												
 				this.nextTimeInLong = this.nextTime.toEpochSecond();
 				this.countLeftAlarm++;					
 			} else {
-				this.countLeftAlarm = 0;
-				this.beginTime = this.beginTime.plus(1,this.offsetEvent);
+				this.countLeftAlarm = 1;
+				this.beginTime = this.beginTime.plus(this.countOffsetEvent,this.offsetEvent);
+				this.updateNextEventTime();
 				this.countEvent--;
 			}
 		}
@@ -225,7 +245,7 @@ public class Event {
 		sb.append(this.textEvent).append(System.lineSeparator());
 		sb.append("Число повторений события --> ").append(this.countEvent).append(System.lineSeparator());
 		sb.append("Период события --> ").append(this.offsetEvent).append(System.lineSeparator());
-		sb.append("Число напоминаний о событии --> ").append(this.countAlarm).append(System.lineSeparator());
+		sb.append("Число напоминаний о событии --> ").append(this.countAlarm - this.countLeftAlarm + 1).append(System.lineSeparator());
 		sb.append("Период напоминания --> ").append(this.offsetAlarm).append(System.lineSeparator());
 		sb.append("Следующее напоминание в -->" ).append(System.lineSeparator());
 		sb.append(this.nextTime).append(System.lineSeparator());
@@ -244,7 +264,7 @@ public class Event {
 			sb.append(this.textEvent).append(System.lineSeparator());
 			sb.append("Следующее напоминание -->").append(System.lineSeparator());
 			sb.append(this.nextTime).append(System.lineSeparator());
-			sb.append("Осталось событий --> ").append(this.countEvent).append(System.lineSeparator());
+			sb.append("Осталось событий --> ").append(this.countAlarm - this.countLeftAlarm).append(System.lineSeparator());
 			sb.append("Осталось напоминаний для текущего события --> ");
 			sb.append(this.countAlarm - this.countLeftAlarm + 1);
 			

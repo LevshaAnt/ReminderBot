@@ -29,7 +29,7 @@ public class MainBot extends TelegramLongPollingBot{
 	
 	public static DBHelper dbhelper = new DBHelper();
 	public static Map<Long,Event> mMessCreate = new ConcurrentHashMap<>();
-	public static Queue<Event> qEvent = new ConcurrentLinkedQueue<Event>();
+	public static Map<String,Event> qEvent = new ConcurrentHashMap<>();
 	public static Map<Long,UserEventHolder> mUserHolder = new ConcurrentHashMap<>();
 	public static Queue<SendMessage> qMess = new ConcurrentLinkedQueue<SendMessage>();
 	public static Map<Long,SendMessage> mMessDuringCreation = new ConcurrentHashMap<>();
@@ -66,7 +66,7 @@ public class MainBot extends TelegramLongPollingBot{
 		}, 0, 33, TimeUnit.MILLISECONDS);
 		
 		ex.scheduleAtFixedRate(new CheckerEvent(), 0, 30, TimeUnit.SECONDS);
-		ex.scheduleAtFixedRate(new ChecherEventFromDB(), 0, 1, TimeUnit.MINUTES);
+		ex.scheduleAtFixedRate(new ChecherEventFromDB(), 0, 3, TimeUnit.MINUTES);
 		ex.scheduleAtFixedRate(new CheckerUser(), 0, 1, TimeUnit.MINUTES);
 	}
 	

@@ -8,8 +8,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Iterator;
-
-
+import java.util.Map.Entry;
 
 import org.telegram.telegrambots.api.methods.send.SendMessage;
 
@@ -28,35 +27,46 @@ public class CheckerEvent implements Runnable {
 	@Override
 	public void run() {
 		
-		System.err.println("Размер пула событий -> " + qEvent.size());
+		ZonedDateTime currentTime = ZonedDateTime.now(ZoneOffset.UTC);
 		
-		ZonedDateTime utc = ZonedDateTime.now(ZoneOffset.UTC);
-		long utcLong = utc.toEpochSecond();
+		sendSelectedFinishedEvent(currentTime);
+		saveFutureEventToDB(currentTime);
+
+	}
+	
+	private void sendSelectedFinishedEvent(ZonedDateTime currentTime) {
 		
-		Iterator<Event> iter = qEvent.iterator();		
+		long utcLong = currentTime.toEpochSecond();
+		
+		Iterator<Event> iter = qEvent.values().iterator(); 
+		
 		while(iter.hasNext()) {
 			Event e = iter.next();
 
 			if(e.getNextTimeInLong() < utcLong) {
 				e.updateNextEventTime();
-				System.err.println("Время след события -> " +  e.getNextTime());
 				qMess.add(getNewMess(e));
 			}
 		}
+	}
+	
+	private void saveFutureEventToDB (ZonedDateTime currentTime) {
 		
-		utc.plus(1,ChronoUnit.MINUTES);
-		utcLong = utc.toEpochSecond();
 		
-		iter = qEvent.iterator();
+		currentTime = currentTime.plus(3,ChronoUnit.MINUTES);
+		long utcLong = currentTime.toEpochSecond();
+		
+		Iterator<Event> iter = qEvent.values().iterator();	
+		
 		while(iter.hasNext()) {
 			Event e = iter.next();
 			
-			System.err.println("Check event set db");
-			System.err.println("NextTimeInLong         " + e.getNextTimeInLong() );
-			System.err.println("CurrentTime + 10 minut " + utcLong);
-			if(e.getNextTimeInLong() > utcLong) {
+			System.err.format("nextTime %d    currenTime+3min %d \n",e.getNextTimeInLong(),utcLong );
+
+			
+			if(e.getNextTimeInLong() > utcLong || e.getCountEvent() == 0) {
 				System.err.println("Перемещение в бд");
-				dbhelper.setEvent(e);
+				dbhelper.setEventorUpdateIfPresent(e);
 				iter.remove();
 			}
 		}

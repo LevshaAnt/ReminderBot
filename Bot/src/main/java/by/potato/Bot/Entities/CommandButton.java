@@ -73,7 +73,7 @@ public class CommandButton {
 	
 		case FINISH:
 			keyboardList.add( getKeyboardRow(Command.FINISH.getText()));
-			keyboardList.add( getKeyboardRow("Добавить активаторы"));
+		//	keyboardList.add( getKeyboardRow("Добавить активаторы"));
 			keyboardList.add( getKeyboardRow(Command.MENU_GENERAL_RETURN.getText()));
 		break;
 		

@@ -111,7 +111,14 @@ public class CheckerNewMess implements Runnable {
 	private void migrationEvent() {
 		mMessCreate.remove(this.chartID);
 		this.event.updateNextEventTime();
-		qEvent.add(this.event);
+		
+		while(this.event.getCountEvent() > 0l) {
+			System.err.println("next time " + this.event.getNextTimeInLong());
+			System.out.println(this.event.getInfo());
+			this.event.updateNextEventTime();
+		}
+		
+		qEvent.put(this.event.getUuid(), this.event);
 	}
 	
 	private SendMessage getNewMess() {
@@ -158,6 +165,9 @@ public class CheckerNewMess implements Runnable {
 			
 		case EVENT_DATE:	
 			try {		
+				this.text = this.text.replaceAll(",", ".");
+				this.text = this.text.replaceAll(":", ".");
+				
 				LocalDateTime ldt = LocalDateTime.parse(this.text, formatter);				
 				ZonedDateTime zdt = ZonedDateTime.of(ldt, ZoneId.ofOffset("GMT",this.userHolder.getClient().getOffset()));
 				this.event.setClientOffset(this.userHolder.getClient().getOffset());
@@ -181,6 +191,36 @@ public class CheckerNewMess implements Runnable {
 						this.event.setCountAlarm(count);
 					}
 				
+					this.userHolder.setError(false);
+				} else {
+					throw new NumberFormatException();
+				}
+			} catch (NumberFormatException e) {
+				this.userHolder.setErrorMess(Command.ERROR_EVENT_COUNT.getText());
+				this.userHolder.setError(true);
+			}
+			break;
+			
+		case EVENT_COUNT_OFFSET:
+			try {
+				long count = Long.parseLong(text);
+				if(count > 0) {
+					this.event.setCountOffsetEvent(count);		
+					this.userHolder.setError(false);
+				} else {
+					throw new NumberFormatException();
+				}
+			} catch (NumberFormatException e) {
+				this.userHolder.setErrorMess(Command.ERROR_EVENT_COUNT.getText());
+				this.userHolder.setError(true);
+			}
+			break;
+			
+		case EVENT_COUNT_ALARM_OFFSET:
+			try {
+				long count = Long.parseLong(text);
+				if(count > 0) {
+					this.event.setCountOffsetAlart(count);		
 					this.userHolder.setError(false);
 				} else {
 					throw new NumberFormatException();
@@ -303,6 +343,13 @@ public class CheckerNewMess implements Runnable {
 				this.userHolder.setNeedTextInp(true);
 				break;
 				
+			case EVENT_COUNT_OFFSET:
+				mess.setText(Command.EVENT_COUNT_OFFSET.getText());
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.HIDE_BUTTON));
+				this.userHolder.setDataType(Command.EVENT_COUNT_OFFSET);
+				this.userHolder.setNeedTextInp(true);
+				break;
+				
 			case EVENT_PERIOD:	
 				mess.setText(Command.EVENT_PERIOD.getText());
 				mess.setReplyMarkup(CommandButton.getKeyboard(Command.EVENT_PERIOD));
@@ -312,6 +359,14 @@ public class CheckerNewMess implements Runnable {
 			case EVENT_COUNT_ALARM:
 				mess.setText(Command.EVENT_COUNT_ALARM.getText());
 				this.userHolder.setDataType(Command.EVENT_COUNT_ALARM);
+				this.userHolder.setNeedTextInp(true);
+				break;	
+				
+			case EVENT_COUNT_ALARM_OFFSET:
+				mess.setText(Command.EVENT_COUNT_ALARM_OFFSET.getText());
+				mess.setReplyMarkup(CommandButton.getKeyboard(Command.HIDE_BUTTON));
+				this.event.setDirectionFlag(true);
+				this.userHolder.setDataType(Command.EVENT_COUNT_ALARM_OFFSET);
 				this.userHolder.setNeedTextInp(true);
 				break;	
 				
@@ -526,7 +581,7 @@ public class CheckerNewMess implements Runnable {
 						
 					case EVENT_COUNT:
 						if(!this.userHolder.isError()) {//not problem in Input
-							this.text =Command.EVENT_PERIOD.getText();
+							this.text =Command.EVENT_COUNT_OFFSET.getText();
 							mess.setText(Command.COMPLITE.getText());
 							mess.setReplyToMessageId(this.messageID);
 						}
@@ -534,6 +589,22 @@ public class CheckerNewMess implements Runnable {
 						
 					
 					case EVENT_COUNT_ALARM:
+						if(!this.userHolder.isError()) {//not problem in Input
+							this.text =Command.EVENT_COUNT_ALARM_OFFSET .getText();
+							mess.setText(Command.COMPLITE.getText());
+							mess.setReplyToMessageId(this.messageID);
+						}
+						break;
+						
+					case EVENT_COUNT_OFFSET:
+						if(!this.userHolder.isError()) {//not problem in Input
+							this.text =Command.EVENT_PERIOD.getText();
+							mess.setText(Command.COMPLITE.getText());
+							mess.setReplyToMessageId(this.messageID);
+						}
+						break;
+						
+					case EVENT_COUNT_ALARM_OFFSET:
 						if(!this.userHolder.isError()) {//not problem in Input
 							this.text =Command.EVENT_PERIOD_ALARM.getText();
 							mess.setText(Command.EVENT_DELETE_INFO.getText());

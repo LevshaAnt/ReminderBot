@@ -178,7 +178,6 @@ public class DBHelper {
 		
 		List<BasicDBObject> objList = new ArrayList<BasicDBObject>();
 		
-	
 		
 		BasicDBObject mainQuery = new BasicDBObject();
 		
@@ -302,11 +301,14 @@ public class DBHelper {
 		return true;
 	}
 	
-	public boolean setEvent(Event event) {
+	public boolean setEventorUpdateIfPresent(Event event) {
 		DBCollection dbcoll = db.getCollection(this.collEvent);
 		
+		System.err.println(event);
+		
+		
 		BasicDBObject whereQuery = new BasicDBObject();
-		whereQuery.put("UUID", event.getUuid());
+		whereQuery.put("uuid", event.getUuid());		
 		
 		try {
 			ObjectMapper om = new ObjectMapper();

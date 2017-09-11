@@ -15,18 +15,20 @@ public class ChecherEventFromDB implements Runnable {
 
 	@Override
 	public void run() {
-		
-		System.err.println("From db");
+
 		ZonedDateTime utc = ZonedDateTime.now(ZoneOffset.UTC)
-								.plus(1, ChronoUnit.MINUTES);
+								.plus(3, ChronoUnit.MINUTES);
 		
 		long timeInLong = utc.toEpochSecond();
 		
-	
-		Queue<Event> eventMap = dbhelper.getEvent(timeInLong);
-		System.err.println("Size from DB --> " + eventMap.size());
 		
-		qEvent.addAll(eventMap);
+		Queue<Event> eventMap = dbhelper.getEvent(timeInLong);
+	
+		eventMap.parallelStream()
+				.filter(e -> !qEvent.containsKey(e.getUuid())) //ATTENTION DO NOT CONTAIN KEY
+				.forEach(e -> qEvent.put(e.getUuid(), e));
+		
+		System.err.println("Колл вычитанных событий из БД = " + eventMap.size());
 	}
 
 }
