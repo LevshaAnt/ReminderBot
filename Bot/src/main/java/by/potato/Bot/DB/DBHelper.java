@@ -87,11 +87,15 @@ public class DBHelper {
 		
 		DBCursor cursor = dbcoll.find(whereQuery);
 		if(cursor.hasNext()) {
-			
+
 			BasicDBObject bdbo = (BasicDBObject) cursor.next();
 		
-			try {
-				Client client = new ObjectMapper().readValue(bdbo.toString(), Client.class);
+			try {			
+				ObjectMapper om = new ObjectMapper();
+				om.registerModule(new JavaTimeModule());
+				om.configure(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE,false);
+				
+				Client client = om.readValue(bdbo.toString(), Client.class);
 				return client;
 			} catch (IOException e) {
 				System.err.println("User in BD is corrupt " + e.getMessage());
@@ -100,7 +104,7 @@ public class DBHelper {
 		
 		return new Client(id,name,surname,this.defaultZoneOffsetUser);
 	}
-	
+
 	public boolean setClient(Client user) {
 		DBCollection dbcoll = db.getCollection(this.collUser);
 		
@@ -108,7 +112,13 @@ public class DBHelper {
 		whereQuery.put("id", user.getId());
 		
 		try {
-			String userStr = new ObjectMapper().writeValueAsString(user);
+			
+			ObjectMapper om = new ObjectMapper();
+			om.registerModule(new JavaTimeModule());
+		    om.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+		    om.configure(SerializationFeature.WRITE_DATES_WITH_ZONE_ID, false);
+		    String userStr = om.writeValueAsString(user);
+
 			DBObject dbObject = (DBObject) JSON.parse(userStr);
 			dbcoll.update(whereQuery,dbObject,true,false);
 			
@@ -136,8 +146,6 @@ public class DBHelper {
 		
 		BasicDBObject whereQuerySecond = new BasicDBObject();
 		whereQuerySecond.put("countEvent", new BasicDBObject("$ne", 0));
-		
-		
 		
 		objList.add(whereQueryFirst);
 		objList.add(whereQuerySecond);

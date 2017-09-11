@@ -106,7 +106,7 @@ public class Event {
 			if(this.countLeftAlarm <= this.countAlarm) {	
 				this.nextTime = this.directionFlag?
 									this.beginTime.plus(this.countOffsetAlart * this.countLeftAlarm , this.offsetAlarm):
-									this.beginTime.minus( (this.countAlarm - this.countLeftAlarm) * this.countOffsetAlart, this.offsetAlarm);
+									this.beginTime.minus( (this.countAlarm - this.countLeftAlarm + 1) * this.countOffsetAlart, this.offsetAlarm);
 												
 				this.nextTimeInLong = this.nextTime.toEpochSecond();
 				this.countLeftAlarm++;					
@@ -264,7 +264,7 @@ public class Event {
 			sb.append(this.textEvent).append(System.lineSeparator());
 			sb.append("Следующее напоминание -->").append(System.lineSeparator());
 			sb.append(this.nextTime).append(System.lineSeparator());
-			sb.append("Осталось событий --> ").append(this.countAlarm - this.countLeftAlarm).append(System.lineSeparator());
+			sb.append("Осталось событий --> ").append(this.countEvent).append(System.lineSeparator());
 			sb.append("Осталось напоминаний для текущего события --> ");
 			sb.append(this.countAlarm - this.countLeftAlarm + 1);
 			

@@ -61,7 +61,7 @@ public class CheckerEvent implements Runnable {
 		while(iter.hasNext()) {
 			Event e = iter.next();
 			
-			System.err.format("nextTime %d    currenTime+3min %d \n",e.getNextTimeInLong(),utcLong );
+	//		System.err.format("nextTime %d    currenTime+3min %d \n",e.getNextTimeInLong(),utcLong );
 
 			
 			if(e.getNextTimeInLong() > utcLong || e.getCountEvent() == 0) {

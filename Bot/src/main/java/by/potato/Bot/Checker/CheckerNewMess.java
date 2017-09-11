@@ -36,7 +36,7 @@ public class CheckerNewMess implements Runnable {
 
 	private enum Const {
 		START_POSITION(0),
-		MAX_POSITION_FOR_DESCRIPTION(50);
+		MAX_POSITION_FOR_DESCRIPTION(53);
 		
 		private int pos;
 
@@ -110,14 +110,7 @@ public class CheckerNewMess implements Runnable {
 	
 	private void migrationEvent() {
 		mMessCreate.remove(this.chartID);
-		this.event.updateNextEventTime();
-		
-		while(this.event.getCountEvent() > 0l) {
-			System.err.println("next time " + this.event.getNextTimeInLong());
-			System.out.println(this.event.getInfo());
-			this.event.updateNextEventTime();
-		}
-		
+		this.event.updateNextEventTime();		
 		qEvent.put(this.event.getUuid(), this.event);
 	}
 	
@@ -365,7 +358,6 @@ public class CheckerNewMess implements Runnable {
 			case EVENT_COUNT_ALARM_OFFSET:
 				mess.setText(Command.EVENT_COUNT_ALARM_OFFSET.getText());
 				mess.setReplyMarkup(CommandButton.getKeyboard(Command.HIDE_BUTTON));
-				this.event.setDirectionFlag(true);
 				this.userHolder.setDataType(Command.EVENT_COUNT_ALARM_OFFSET);
 				this.userHolder.setNeedTextInp(true);
 				break;	
