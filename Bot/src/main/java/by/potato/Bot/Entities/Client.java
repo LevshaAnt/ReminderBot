@@ -1,5 +1,8 @@
 package by.potato.Bot.Entities;
 
+import java.time.DateTimeException;
+import java.time.ZoneOffset;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(value = { "_id" })
@@ -8,14 +11,21 @@ public class Client {
 	private Long id;
 	private String name = "";
 	private String surname = "";
+	private ZoneOffset offset;
 	
 	public Client() {	}
 	
-	public Client(Long id, String name, String surname) {
+	public Client(Long id, String name, String surname, ZoneOffset offset) {
 		super();
 		this.id = id;
 		this.name = name;
 		this.surname = surname;
+		this.offset = offset;
+	}
+
+	@Override
+	public String toString() {
+		return "Client [id=" + id + ", offset=" + offset + "]";
 	}
 
 	public Long getId() {
@@ -40,6 +50,23 @@ public class Client {
 
 	public void setSurname(String surname) {
 		this.surname = surname;
+	}
+
+	public ZoneOffset getOffset() {
+		return offset;
+	}
+
+	public void setOffset(ZoneOffset offset) {
+		this.offset = offset;
+	}
+	
+	public boolean setOffset(String offsetstr) {
+		try {
+			this.offset = ZoneOffset.of(offsetstr);
+			return true;
+		} catch (DateTimeException e) {
+			return false;
+		}
 	}
 
 	@Override

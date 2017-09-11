@@ -3,31 +3,40 @@ package by.potato.Bot.Holders;
 import java.time.Instant;
 
 import by.potato.Bot.Entities.Client;
-import by.potato.Bot.Entities.DataType;
+import by.potato.Bot.Entities.Command;
 
-public class UserHolder {
+public class UserEventHolder {
 
 	private Client client;
-	private Long lastAppeal;
-	private DataType dataType;
+	private Instant lastAppeal;
+	private Command dataType;
 	private boolean needTextInp;
 	private boolean error;
 	private String errorMess;
+	private boolean flagEvent;
 	
 
-	public UserHolder(Client client) {
+	public UserEventHolder(Client client) {
 		this.client = client;
 		this.errorMess ="";
+		this.flagEvent = true;
 		updateLastAppeal();
 	}
+	
+	public boolean isFlagEvent() {
+		return flagEvent;
+	}
 
-	public Long getLastAppeal() {
-		return lastAppeal;
+	public void setFlagEvent(boolean flagEvent) {
+		this.flagEvent = flagEvent;
 	}
 
 	public void updateLastAppeal() {
-		this.lastAppeal = Instant.now().getEpochSecond();	
+		this.lastAppeal = Instant.now();
+	}
 
+	public Instant getLastAppeal() {
+		return lastAppeal;
 	}
 
 	public Client getClient() {
@@ -38,11 +47,11 @@ public class UserHolder {
 		this.client = client;
 	}
 
-	public DataType getDataType() {
+	public Command getDataType() {
 		return dataType;
 	}
 
-	public void setDataType(DataType dataType) {
+	public void setDataType(Command dataType) {
 		this.dataType = dataType;
 	}
 

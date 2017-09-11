@@ -3,6 +3,8 @@ package by.potato.Bot;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -16,18 +18,24 @@ import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
 import by.potato.Bot.DB.DBHelper;
-import by.potato.Bot.Holders.UserHolder;
+import by.potato.Bot.Entities.Event;
+import by.potato.Bot.Holders.UserEventHolder;
+import by.potato.Bot.Checker.CheckerEvent;
 import by.potato.Bot.Checker.CheckerNewMess;
+import by.potato.Bot.Checker.CheckerUser;
+import by.potato.Bot.Checker.ChecherEventFromDB;
 
 public class MainBot extends TelegramLongPollingBot{
 	
 	public static DBHelper dbhelper = new DBHelper();
-	private ExecutorService esNewMess = Executors.newCachedThreadPool();
-	public static Map<Long,UserHolder> mUserHolder = new ConcurrentHashMap<>();
+	public static Map<Long,Event> mMessCreate = new ConcurrentHashMap<>();
+	public static Map<String,Event> qEvent = new ConcurrentHashMap<>();
+	public static Map<Long,UserEventHolder> mUserHolder = new ConcurrentHashMap<>();
 	public static Queue<SendMessage> qMess = new ConcurrentLinkedQueue<SendMessage>();
-	public static Queue<SendMessage> qMessCreate = new ConcurrentLinkedQueue<SendMessage>();
 	public static Map<Long,SendMessage> mMessDuringCreation = new ConcurrentHashMap<>();
+	public static ScheduledExecutorService ex = Executors.newScheduledThreadPool(4);
 			
+	private ExecutorService esNewMess = Executors.newCachedThreadPool();
 	
 	public static void main(String[] args) {
 		
@@ -40,31 +48,28 @@ public class MainBot extends TelegramLongPollingBot{
 		}	
 	}
 
-	public MainBot() {
-		this.sender();
+	public MainBot() {	
+		this.checher();
 	}
 
-	private void sender() {
-		new Thread() {
-			@SuppressWarnings("deprecation")
-			@Override
-			public void run() {
-				while (true) {
-					try {
-						if(!qMess.isEmpty()) {
-							sendMessage(qMess.poll());
-						}
-						Thread.sleep(33);
-					} catch (TelegramApiException e) {
-						e.printStackTrace();
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
+	@SuppressWarnings("deprecation")
+	private void checher() {
+		
+		ex.scheduleAtFixedRate(()->{
+			if(!qMess.isEmpty()) {
+				try {
+					sendMessage(qMess.poll());
+				} catch (TelegramApiException e) {
+					e.printStackTrace();
 				}
 			}
-		}.start();
+		}, 0, 33, TimeUnit.MILLISECONDS);
+		
+		ex.scheduleAtFixedRate(new CheckerEvent(), 0, 30, TimeUnit.SECONDS);
+		ex.scheduleAtFixedRate(new ChecherEventFromDB(), 0, 3, TimeUnit.MINUTES);
+		ex.scheduleAtFixedRate(new CheckerUser(), 0, 1, TimeUnit.MINUTES);
 	}
-
+	
 	@Override
 	public String getBotUsername() {
 		return dbhelper.getNameBot();
