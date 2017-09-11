@@ -194,6 +194,10 @@ public class DBHelper {
 		if(future) {
 			whereQueryFirst.put("nextTimeInLong", new BasicDBObject("$gt", utcLong));
 		} else {
+			BasicDBObject whereQueryTheard = new BasicDBObject();
+			whereQueryTheard.put("countEvent", 0);
+			objList.add(whereQueryTheard);
+			
 			whereQueryFirst.put("nextTimeInLong", new BasicDBObject("$lt", utcLong));
 		}
 		

@@ -110,6 +110,13 @@ public class CheckerNewMess implements Runnable {
 	
 	private void migrationEvent() {
 		mMessCreate.remove(this.chartID);
+		
+		
+		while(this.event.getCountEvent() > 0) {
+			this.event.updateNextEventTime();	
+			System.err.println(this.event.getReminder());	
+		}
+		
 		this.event.updateNextEventTime();		
 		qEvent.put(this.event.getUuid(), this.event);
 	}

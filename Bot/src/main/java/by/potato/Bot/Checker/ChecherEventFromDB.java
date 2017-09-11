@@ -27,8 +27,6 @@ public class ChecherEventFromDB implements Runnable {
 		eventMap.parallelStream()
 				.filter(e -> !qEvent.containsKey(e.getUuid())) //ATTENTION DO NOT CONTAIN KEY
 				.forEach(e -> qEvent.put(e.getUuid(), e));
-		
-		System.err.println("Колл вычитанных событий из БД = " + eventMap.size());
 	}
 
 }
