@@ -1,26 +1,28 @@
 package by.potato.Bot.DB;
 
 import java.io.IOException;
+
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+
 import com.mongodb.Block;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
-
-import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.UpdateOptions;
 
 import org.bson.Document;
@@ -35,8 +37,7 @@ public class DBHelper {
 	private Long idMaker;
 	private String token;
 	private String nameBot;
-	private  ZoneOffset defaultZoneOffsetUser;
-	
+	private ZoneOffset defaultZoneOffsetUser;
 	
 	private static final String dbName = "reminderbot";
 	private static final String collConnect = "connect";
@@ -109,7 +110,7 @@ public class DBHelper {
 		return new Client(id,name,surname,this.defaultZoneOffsetUser);
 	}
 
-	public void setClient(Client client) {
+	public boolean setClient(Client client) {
 		try {
 			String userStr = mapperForWrite.writeValueAsString(client);
 			Document doc = Document.parse(userStr);
@@ -117,8 +118,11 @@ public class DBHelper {
 			MongoCollection<Document> dbcoll = dataBase.getCollection(collUser);
 			dbcoll.updateOne(Filters.eq("id", client.getId()), doc, new UpdateOptions().upsert(true));
 			
+			return true;
+			
 		} catch (JsonProcessingException | MongoException e ) {
 			System.err.format("Client ID = %d TO BD is corrupt. Error message %s",client.getId(), e.getMessage());
+			return false;
 		}
 	}
 	
@@ -128,33 +132,26 @@ public class DBHelper {
 		
 		MongoCollection<Document> dbcoll = dataBase.getCollection(collEvent);
 		
+		
 		Block<Document> addToCollect = new Block<Document>() {
 		     @Override
-		     public void apply(final Document document){
-		    	 try {
+		     public void apply(final Document document) {		    	 
+				try {
 					eventMap.add(mapperForRead.readValue(document.toString(), Event.class));
 				} catch (IOException e) {
-					System.err.format("Error parse event from DB. Error message %s", e.getMessage());
+					new RuntimeException(e.getMessage());
 				}
 		     }
 		};
 		
-		dbcoll.find(Filters.and(Filters.lt("nextTimeInLong",needTime),Filters.eq("countEvent", 0)))
-			.forEach(addToCollect);
+		try {
+			dbcoll.find(Filters.and(Filters.lt("nextTimeInLong",needTime),Filters.eq("countEvent", 0)))
+				.forEach(addToCollect);
+		} catch (RuntimeException e) {
+			System.err.format("Corrupt data event message %", e.getMessage());
+		}
 		
 		return eventMap;
-	}
-	
-	public class Inc {
-		private AtomicInteger counter = new AtomicInteger(0);
-	
-		public int getCounter() {
-			return this.counter.get();
-		}
-
-		public void inc() {
-			this.counter.incrementAndGet();
-		}
 	}
 	
 	public String getEvents(boolean future , Long clientID) {//true --> future false --> last
@@ -177,7 +174,8 @@ public class DBHelper {
 		Bson fullFilter = Filters.and(filtTime,Filters.eq("idCreateUser", clientID));
 
 		StringBuilder sb = new StringBuilder();
-		Inc inc = new Inc();
+		
+		AtomicInteger counter = new AtomicInteger(0);
 		
 		Block<Document> addToCollect = new Block<Document>() {
 		     @Override
@@ -185,21 +183,24 @@ public class DBHelper {
 		    	 Event event;
 				try {
 					event = mapperForRead.readValue(document.toString(), Event.class);
-					inc.inc();
-			    	sb.append(System.lineSeparator()).append("Номер события --> " + inc.getCounter()).append(System.lineSeparator());
+			    	sb.append(System.lineSeparator()).append("Номер события --> " + counter.incrementAndGet()).append(System.lineSeparator());
 					sb.append(event.getInfo());
 				} catch (IOException e) {
-					System.err.format("Event in BD is corrupt message %s " + e.getMessage());
+					new RuntimeException(e.getMessage());
 				}
 		     }
 		};
 		
+		try {
 		dbcoll.find(fullFilter).forEach(addToCollect);
+		} catch (RuntimeException e){
+			System.err.format("Event in BD is corrupt message %s " + e.getMessage());
+		}
 		
 		return sb.toString();
 	}
 	
-	public void deleteEvent(boolean future,Long clientID, int number) {
+	public boolean deleteEvent(boolean future,Long clientID, int number) {
 		
 		long utcLong = timeLastSearch.get(clientID);
 
@@ -217,10 +218,16 @@ public class DBHelper {
 		
 		Document doc = dbcoll.find(fullFilter).skip(--number).first();
 
-		dbcoll.deleteOne(doc);
+		try {
+			dbcoll.deleteOne(doc);
+			return true;
+		} catch (MongoException  e) {
+			System.err.format("Delete event , clientID %d , number %d, utcLong %d , message %s ",clientID,number, utcLong, e.getMessage());
+			return false;
+		}
 	}
 	
-	public void deleteEvents() {
+	public boolean deleteEvents() {
 		try {	
 			MongoCollection<Document> dbcoll = dataBase.getCollection(collEvent);
 			
@@ -228,12 +235,14 @@ public class DBHelper {
 			long utcLong = utc.toEpochSecond();
 		
 			dbcoll.deleteMany(Filters.lt("nextTimeInLong", utcLong));
+			return true;
 		} catch (MongoException e ) {
 			System.err.format( "Error delete finished events message %s", e.getMessage());
+			return false;
 		}
 	}
-	
-	public void setEventOrUpdate(Event event) {				
+		
+	public boolean setEventOrUpdate(Event event) {				
 		try {	
 			MongoCollection<Document> dbcoll = dataBase.getCollection(collIdea);
 		
@@ -241,13 +250,14 @@ public class DBHelper {
 			Document doc = Document.parse(eventStr);
 	
 			dbcoll.updateOne(Filters.eq("uuid", event.getUuid()), doc, new UpdateOptions().upsert(true));
-			
+			return true;
 		} catch (JsonProcessingException | MongoException e ) {
 			System.err.format("Event UUID = %d TO BD is corrupt. Error message %s",event.getUuid(), e.getMessage());
+			return false;
 		}
 	}
-	
-	public void setIdea(String idea, Long userId) {
+		
+	public boolean setIdea(String idea, Long userId) {
 		
 		MongoCollection<Document> dbcoll = dataBase.getCollection(collIdea);
 		
@@ -256,8 +266,10 @@ public class DBHelper {
 		
 		try {
 			dbcoll.insertOne(doc);
+			return true;
 		} catch (MongoException e) {
 			System.err.println("Error insert IDEA to BD " + e.getMessage());
+			return false;
 		}
 
 	}

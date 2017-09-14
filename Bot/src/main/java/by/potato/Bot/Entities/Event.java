@@ -29,7 +29,7 @@ public class Event {
 	private long idCreateUser;
 	private ZoneOffset clientOffset;
 	private Set<Integer> idUsers;
-	private Boolean directionFlag; 
+	private boolean directionFlag; 
 	
 	public Event() {
 		this.idUsers = new HashSet<Integer>();
