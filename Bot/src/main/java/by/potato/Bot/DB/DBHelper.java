@@ -1,65 +1,79 @@
 package by.potato.Bot.DB;
 
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
+import com.mongodb.Block;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
-import com.mongodb.util.JSON;
+
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.UpdateOptions;
+
+import org.bson.Document;
+import org.bson.conversions.Bson;
 
 import by.potato.Bot.Entities.Event;
 import by.potato.Bot.Entities.Client;
-import by.potato.Bot.Entities.Command;
+
 
 public class DBHelper {
-	private MongoClient mongo;
-	private String dbName = "reminderbot";
-	private String collConnect = "connect";
-	private String collUser = "user";
-	private String collEvent = "event";
-	private String collIdea = "idea";
+	
+	private Long idMaker;
 	private String token;
 	private String nameBot;
-	private Long idMaker;
-	private DB db;
-	private ZoneOffset defaultZoneOffsetUser;
-	private static Map<Long,Long> mLastSearch = new ConcurrentHashMap<>();
+	private  ZoneOffset defaultZoneOffsetUser;
+	
+	
+	private static final String dbName = "reminderbot";
+	private static final String collConnect = "connect";
+	private static final String collUser = "user";
+	private static final String collEvent = "event";
+	private static final String collIdea = "idea";
+
+	private static MongoClient mongoClient;
+	private static MongoDatabase dataBase;
+	
+	private static Map<Long,Long> timeLastSearch = new ConcurrentHashMap<>();
+	private static ObjectMapper mapperForRead;
+	private static ObjectMapper mapperForWrite;
+	
+	static {
+		mapperForRead = new ObjectMapper();
+		mapperForRead.registerModule(new JavaTimeModule());
+		mapperForRead.configure(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE,false);
+		
+		mapperForWrite = new ObjectMapper();
+		mapperForWrite.registerModule(new JavaTimeModule());
+		mapperForWrite.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+		mapperForWrite.configure(SerializationFeature.WRITE_DATES_WITH_ZONE_ID, false);
+		
+		mongoClient = new MongoClient( "localhost" , 27017 );
+		dataBase = mongoClient.getDatabase(dbName);
+	}
 
 	public DBHelper() {
-		try {
-			mongo = new MongoClient( "localhost" , 27017 );
-			
-			this.db = this.mongo.getDB(this.dbName);
-			DBCollection dbcoll = this.db.getCollection(collConnect);
-			DBObject dbo = dbcoll.findOne();
-			this.token = (String) dbo.get("token");
-			this.nameBot = (String) dbo.get("name");
-			this.defaultZoneOffsetUser = ZoneOffset.of((String)dbo.get("defaultZoneOffsetUser"));
-			this.idMaker =  ((Number) dbo.get("idMaker")).longValue();
-			
-		} catch (UnknownHostException e) {
-			System.err.println("Error to connect DB " + e.getCause());
-		}
+
+		MongoCollection<Document> dbcoll = dataBase.getCollection(collConnect);
+		Document doc = dbcoll.find().first();
 		
+		this.token = doc.getString("token");
+		this.nameBot = doc.getString("name");
+		this.idMaker = doc.getLong("idMaker");
+		this.defaultZoneOffsetUser = ZoneOffset.of(doc.getString("defaultZoneOffsetUser"));
 	}
 
 	public ZoneOffset getDefaultZoneOffsetUser() {
@@ -77,284 +91,174 @@ public class DBHelper {
 	public String getNameBot() {
 		return this.nameBot;
 	}
-
-	public Client getClient(Long id,String name,String surname) {
+	
+	public Client getClientOrCreate(Long id,String name,String surname) {
 		
-		DBCollection dbcoll = db.getCollection(this.collUser);
-		
-		BasicDBObject whereQuery = new BasicDBObject();
-		whereQuery.put("id", id);
-		
-		DBCursor cursor = dbcoll.find(whereQuery);
-		if(cursor.hasNext()) {
-
-			BasicDBObject bdbo = (BasicDBObject) cursor.next();
-		
-			try {			
-				ObjectMapper om = new ObjectMapper();
-				om.registerModule(new JavaTimeModule());
-				om.configure(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE,false);
+		MongoCollection<Document> dbcoll = dataBase.getCollection(collUser);
 				
-				Client client = om.readValue(bdbo.toString(), Client.class);
+		Document doc = dbcoll.find(Filters.eq("id", id)).first();
+		
+		if(doc != null) {
+			try {
+				Client client = mapperForRead.readValue(doc.toString(), Client.class);
 				return client;
 			} catch (IOException e) {
-				System.err.println("User in BD is corrupt " + e.getMessage());
+				System.err.format("Client ID = %d FROM BD is corrupt. Error message %s",id, e.getMessage());
 			}
-		}	
-		
+		}
 		return new Client(id,name,surname,this.defaultZoneOffsetUser);
 	}
 
-	public boolean setClient(Client user) {
-		DBCollection dbcoll = db.getCollection(this.collUser);
-		
-		BasicDBObject whereQuery = new BasicDBObject();
-		whereQuery.put("id", user.getId());
-		
+	public void setClient(Client client) {
 		try {
+			String userStr = mapperForWrite.writeValueAsString(client);
+			Document doc = Document.parse(userStr);
 			
-			ObjectMapper om = new ObjectMapper();
-			om.registerModule(new JavaTimeModule());
-		    om.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-		    om.configure(SerializationFeature.WRITE_DATES_WITH_ZONE_ID, false);
-		    String userStr = om.writeValueAsString(user);
-
-			DBObject dbObject = (DBObject) JSON.parse(userStr);
-			dbcoll.update(whereQuery,dbObject,true,false);
+			MongoCollection<Document> dbcoll = dataBase.getCollection(collUser);
+			dbcoll.updateOne(Filters.eq("id", client.getId()), doc, new UpdateOptions().upsert(true));
 			
-			return true;
-		} catch (JsonProcessingException e) {
-			System.err.println("Event in BD is corrupt " + e.getMessage());
+		} catch (JsonProcessingException | MongoException e ) {
+			System.err.format("Client ID = %d TO BD is corrupt. Error message %s",client.getId(), e.getMessage());
 		}
-		
-		return false;
 	}
 	
-	public Queue<Event> getEvent(long needTime) {
-		
+	public Queue<Event> getEvent(Long needTime) {
+				
 		Queue<Event> eventMap = new ConcurrentLinkedQueue<>();
 		
-		DBCollection dbcoll = db.getCollection(this.collEvent);
+		MongoCollection<Document> dbcoll = dataBase.getCollection(collEvent);
 		
-
-		List<BasicDBObject> objList = new ArrayList<BasicDBObject>();
+		Block<Document> addToCollect = new Block<Document>() {
+		     @Override
+		     public void apply(final Document document){
+		    	 try {
+					eventMap.add(mapperForRead.readValue(document.toString(), Event.class));
+				} catch (IOException e) {
+					System.err.format("Error parse event from DB. Error message %s", e.getMessage());
+				}
+		     }
+		};
 		
-		BasicDBObject mainQuery = new BasicDBObject();
+		dbcoll.find(Filters.and(Filters.lt("nextTimeInLong",needTime),Filters.eq("countEvent", 0)))
+			.forEach(addToCollect);
 		
-		BasicDBObject whereQueryFirst = new BasicDBObject();
-		whereQueryFirst.put("nextTimeInLong", new BasicDBObject("$lt", needTime).append("$gt", 1));
-		
-		BasicDBObject whereQuerySecond = new BasicDBObject();
-		whereQuerySecond.put("countEvent", new BasicDBObject("$ne", 0));
-		
-		objList.add(whereQueryFirst);
-		objList.add(whereQuerySecond);
-		
-		mainQuery.put("$and", objList);
-
-		DBCursor cursor = dbcoll.find(mainQuery);
-		
-		while (cursor.hasNext()) {
-			BasicDBObject bdbo = (BasicDBObject) cursor.next();
-			
-			try {
-				ObjectMapper om = new ObjectMapper();
-				om.registerModule(new JavaTimeModule());
-				om.configure(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE,false);
-				
-				Event event = om.readValue(bdbo.toString(), Event.class);
-				eventMap.add(event);
-			} catch (IOException e) {
-				System.err.println("Event in BD is corrupt " + e.getMessage());
-			}
-		}
-
 		return eventMap;
 	}
 	
-	public String getEvents(boolean future , Long userID) {//true --> future false --> last
+	public class Inc {
+		private AtomicInteger counter = new AtomicInteger(0);
 	
-		
-		StringBuilder sb = new StringBuilder();
-		
+		public int getCounter() {
+			return this.counter.get();
+		}
+
+		public void inc() {
+			this.counter.incrementAndGet();
+		}
+	}
+	
+	public String getEvents(boolean future , Long clientID) {//true --> future false --> last
+	
 		ZonedDateTime utc = ZonedDateTime.now(ZoneOffset.UTC);
 		long utcLong = utc.toEpochSecond();
 	
-		mLastSearch.put(userID, utcLong);
+		timeLastSearch.put(clientID, utcLong);
 		
-		DBCollection dbcoll = db.getCollection(this.collEvent);
+		MongoCollection<Document> dbcoll = dataBase.getCollection(collEvent);
 		
-		List<BasicDBObject> objList = new ArrayList<BasicDBObject>();
-		
-		
-		BasicDBObject mainQuery = new BasicDBObject();
-		
-		BasicDBObject whereQueryFirst = new BasicDBObject();
+		Bson filtTime;
 		
 		if(future) {
-			whereQueryFirst.put("nextTimeInLong", new BasicDBObject("$gt", utcLong));
+			filtTime = Filters.gte("nextTimeInLong",utcLong);
 		} else {
-			BasicDBObject whereQueryTheard = new BasicDBObject();
-			whereQueryTheard.put("countEvent", 0);
-			objList.add(whereQueryTheard);
-			
-			whereQueryFirst.put("nextTimeInLong", new BasicDBObject("$lt", utcLong));
+			filtTime = Filters.lt("nextTimeInLong",utcLong);
 		}
 		
-		BasicDBObject whereQuerySecond = new BasicDBObject();
-		whereQuerySecond.put("idCreateUser", userID);
-		
-		objList.add(whereQueryFirst);
-		objList.add(whereQuerySecond);
-		
-		mainQuery.put("$and", objList);
-		
-		int count=1;
-		DBCursor cursor = dbcoll.find(mainQuery);
-	//	cursor.sort(orderBy)
-		
-		try {
-		while (cursor.hasNext()) {
-			BasicDBObject bdbo = (BasicDBObject) cursor.next();
-			
-			System.err.println(bdbo.toString());
-			
-			try {
-				
-				ObjectMapper om = new ObjectMapper();
-				om.registerModule(new JavaTimeModule());
-				om.configure(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE,false);
-				
-				Event event = om.readValue(bdbo.toString(), Event.class);
-			
-				sb.append(System.lineSeparator()).append("Номер события --> " + count++).append(System.lineSeparator());
-				sb.append(event.getInfo());
-			} catch (IOException e) {
-				System.err.println("Event in BD is corrupt " + e.getMessage());
-			}
-		} } catch (MongoException e) {
-			System.err.println(e.getMessage() + "\n" + e.getCause());
-		}
-		
-		if(sb.length() == 0) {//not future event
-			sb.append(System.lineSeparator()).append(Command.EVENT_NOT.getText());
-		}
+		Bson fullFilter = Filters.and(filtTime,Filters.eq("idCreateUser", clientID));
 
+		StringBuilder sb = new StringBuilder();
+		Inc inc = new Inc();
+		
+		Block<Document> addToCollect = new Block<Document>() {
+		     @Override
+		     public void apply(final Document document){
+		    	 Event event;
+				try {
+					event = mapperForRead.readValue(document.toString(), Event.class);
+					inc.inc();
+			    	sb.append(System.lineSeparator()).append("Номер события --> " + inc.getCounter()).append(System.lineSeparator());
+					sb.append(event.getInfo());
+				} catch (IOException e) {
+					System.err.format("Event in BD is corrupt message %s " + e.getMessage());
+				}
+		     }
+		};
+		
+		dbcoll.find(fullFilter).forEach(addToCollect);
+		
 		return sb.toString();
 	}
 	
-	public boolean deleteEvent(boolean future,Long userID, int number) {
+	public void deleteEvent(boolean future,Long clientID, int number) {
 		
+		long utcLong = timeLastSearch.get(clientID);
+
+		MongoCollection<Document> dbcoll = dataBase.getCollection(collEvent);
 		
-		ZonedDateTime utc = ZonedDateTime.now(ZoneOffset.UTC);
-		long utcLong = utc.toEpochSecond();
-	
-		
-		DBCollection dbcoll = db.getCollection(this.collEvent);
-		
-		List<BasicDBObject> objList = new ArrayList<BasicDBObject>();
-		
-		BasicDBObject mainQuery = new BasicDBObject();
-	
-		
-		BasicDBObject whereQueryFirst = new BasicDBObject();
+		Bson filtTime;
 		
 		if(future) {
-			whereQueryFirst.put("nextTimeInLong", new BasicDBObject("$gt", utcLong));
+			filtTime = Filters.gte("nextTimeInLong",utcLong);
 		} else {
-			whereQueryFirst.put("nextTimeInLong", new BasicDBObject("$lt", utcLong));
+			filtTime = Filters.lt("nextTimeInLong",utcLong);
 		}
 		
-		BasicDBObject whereQuerySecond = new BasicDBObject();
-		whereQuerySecond.put("idCreateUser", userID);
+		Bson fullFilter = Filters.and(filtTime,Filters.eq("idCreateUser", clientID));
 		
-		objList.add(whereQueryFirst);
-		objList.add(whereQuerySecond);
-		
-		mainQuery.put("$and", objList);
-		
-		DBCursor cursor = dbcoll.find(mainQuery);
-		
-		try {
-			cursor.skip(number -1);
-			
-			ObjectMapper om = new ObjectMapper();
-			om.registerModule(new JavaTimeModule());
-			om.configure(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE,false);
-			
-			BasicDBObject bdbo = (BasicDBObject) cursor.next();
+		Document doc = dbcoll.find(fullFilter).skip(--number).first();
 
-			dbcoll.remove(bdbo);
-				
-			mLastSearch.remove(userID);
-		} catch (Exception e) {
-			System.err.println(e.getMessage() + "\n" + e.getCause());
-			return false;
-		}
-		return true;
+		dbcoll.deleteOne(doc);
 	}
 	
-	public boolean deleteEvents() {
+	public void deleteEvents() {
+		try {	
+			MongoCollection<Document> dbcoll = dataBase.getCollection(collEvent);
+			
+			ZonedDateTime utc = ZonedDateTime.now(ZoneOffset.UTC);
+			long utcLong = utc.toEpochSecond();
 		
-		DBCollection dbcoll = db.getCollection(this.collEvent);
-		BasicDBObject query = new BasicDBObject();
+			dbcoll.deleteMany(Filters.lt("nextTimeInLong", utcLong));
+		} catch (MongoException e ) {
+			System.err.format( "Error delete finished events message %s", e.getMessage());
+		}
+	}
+	
+	public void setEventOrUpdate(Event event) {				
+		try {	
+			MongoCollection<Document> dbcoll = dataBase.getCollection(collIdea);
 		
-		ZonedDateTime utc = ZonedDateTime.now(ZoneOffset.UTC);
-		long utcLong = utc.toEpochSecond();
+			String eventStr = mapperForWrite.writeValueAsString(event);
+			Document doc = Document.parse(eventStr);
+	
+			dbcoll.updateOne(Filters.eq("uuid", event.getUuid()), doc, new UpdateOptions().upsert(true));
+			
+		} catch (JsonProcessingException | MongoException e ) {
+			System.err.format("Event UUID = %d TO BD is corrupt. Error message %s",event.getUuid(), e.getMessage());
+		}
+	}
+	
+	public void setIdea(String idea, Long userId) {
 		
-		query.put("nextTimeInLong", new BasicDBObject("$lt", utcLong));
+		MongoCollection<Document> dbcoll = dataBase.getCollection(collIdea);
+		
+		Document doc = new Document();
+		doc.append("userID", userId).append("textIdea", idea);
 		
 		try {
-		dbcoll.remove(query);
+			dbcoll.insertOne(doc);
 		} catch (MongoException e) {
-			System.err.println(e.getMessage() + "\n" + e.getCause());
-			return false;
+			System.err.println("Error insert IDEA to BD " + e.getMessage());
 		}
-		return true;
-	}
-	
-	public boolean setEventorUpdateIfPresent(Event event) {
-		DBCollection dbcoll = db.getCollection(this.collEvent);
-		
-		BasicDBObject whereQuery = new BasicDBObject();
-		whereQuery.put("uuid", event.getUuid());		
-		
-		try {
-			ObjectMapper om = new ObjectMapper();
-			om.registerModule(new JavaTimeModule());
-		    om.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-		    om.configure(SerializationFeature.WRITE_DATES_WITH_ZONE_ID, false);
 
-			String eventStr = om.writeValueAsString(event);
-			DBObject dbObject = (DBObject) JSON.parse(eventStr);
-			dbcoll.update(whereQuery,dbObject,true,false);
-			
-			return true;
-		} catch (JsonProcessingException e) {
-			System.err.println("Error insert to BD " + e.getMessage());
-		}
-		
-		return false;
 	}
-	
-	public boolean setIdea(String idea, Long userId) {
-		
-		
-		DBCollection dbcoll = db.getCollection(this.collIdea);
-		
-		BasicDBObject document = new BasicDBObject();
-		document.put("userID", userId);
-		document.put("text idea", idea);
-
-		try {
-			dbcoll.insert(document);
-		} catch (MongoException e) {
-			System.err.println( e.getMessage());
-			return false;
-		}
-		
-		return true;
-	}
-	
-	
 }

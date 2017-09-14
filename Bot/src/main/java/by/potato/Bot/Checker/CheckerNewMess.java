@@ -86,7 +86,7 @@ public class CheckerNewMess implements Runnable {
 				surname = optSubname.orElse("not surname");
 			}
 			
-			Client client = dbhelper.getClient(this.chartID, name, surname);
+			Client client = dbhelper.getClientOrCreate(this.chartID, name, surname);
 			
 			this.userHolder = new UserEventHolder(client);
 			

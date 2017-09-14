@@ -63,7 +63,7 @@ public class CheckerEvent implements Runnable {
 			
 			if(e.getNextTimeInLong() > utcLong || e.getCountEvent() == 0) {
 				System.err.println("Перемещение в бд");
-				dbhelper.setEventorUpdateIfPresent(e);
+				dbhelper.setEventOrUpdate(e);
 				iter.remove();
 			}
 		}
